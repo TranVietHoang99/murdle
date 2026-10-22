@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Murdle · Thám Tử Đấu Trí</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='4' y='4' width='92' height='92' rx='18' fill='%23121829'/><rect x='14' y='14' width='52' height='52' rx='6' fill='%23fbf6ea'/><path d='M20 31l7 7 11-14' stroke='%232b9358' stroke-width='6' fill='none' stroke-linecap='round'/><path d='M45 45l12 12M57 45L45 57' stroke='%23d23a44' stroke-width='6' stroke-linecap='round'/><circle cx='62' cy='60' r='17' fill='none' stroke='%23f0bd3d' stroke-width='7'/><path d='M74 72l12 12' stroke='%23f0bd3d' stroke-width='9' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&family=Roboto+Slab:wght@500;700;900&family=Patrick+Hand&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+:root{
+  --bg:#121829; --bg2:#1c2540; --paper:#fbf6ea; --paper2:#f2e8d0; --ink:#1d2233; --muted:#7d7563; --line:#e4d8bd; --cellb:#d9cba8;
+  --red:#d23a44; --red-d:#94232d; --yes:#2b9358; --yes-d:#1c6a3d; --gold:#f0bd3d; --gold-d:#b18218;
+  --blue:#3a6fd8; --blue-d:#254ea3; --p0:#3a6fd8; --p1:#e0703a; --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:"Be Vietnam Pro",system-ui,"Segoe UI",sans-serif;color:var(--ink);
+  background:
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/26px 26px,
+    linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/26px 26px,
+    radial-gradient(circle at 15% 0,rgba(210,58,68,.18) 0,transparent 45%),
+    radial-gradient(circle at 100% 100%,rgba(58,111,216,.16) 0,transparent 45%),
+    var(--bg);
+  background-attachment:fixed;
+}
+button,select,input{font-family:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+
+/* ---------- Lobby ---------- */
+#lobby{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.lobby-card{width:100%;max-width:460px;background:var(--paper);border-radius:28px;padding:24px 22px;box-shadow:0 18px 50px rgba(0,0,0,.5);text-align:center;border:3px solid #dccca6}
+.logoSvg{width:132px;height:auto;display:block;margin:0 auto}
+h1{margin:4px 0 0;font-family:"Roboto Slab",serif;font-weight:900;font-size:3.3rem;line-height:.95;letter-spacing:5px;color:var(--red);text-shadow:3px 3px 0 var(--ink)}
+.sub{display:inline-block;margin-top:8px;background:var(--ink);color:var(--gold);font-family:"Roboto Slab";font-weight:700;letter-spacing:2px;padding:2px 12px;border-radius:6px;text-transform:uppercase;font-size:.95rem}
+.tag{color:var(--muted);margin:8px 0 12px}
+label{display:block;text-align:left;font-weight:800;font-size:.9rem;margin:12px 0 4px}
+input[type=text],input:not([type]),select{width:100%;font-size:1rem;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:#fff;color:var(--ink);outline:none}
+select{padding:9px 6px;cursor:pointer}
+input:focus,select:focus{border-color:var(--red)}
+#codeInput{text-transform:uppercase;letter-spacing:4px;text-align:center;font-weight:800}
+.setgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.setgrid label{font-size:.8rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:14px;padding:10px 16px;font-size:1rem;font-weight:800;color:#fff;background:var(--bg2);box-shadow:0 4px 0 #0b0f1c;transition:transform .08s,box-shadow .08s;line-height:1.25}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0b0f1c}
+.btn.red{background:var(--red);box-shadow:0 4px 0 var(--red-d)}
+.btn.yes{background:var(--yes);box-shadow:0 4px 0 var(--yes-d)}
+.btn.blue{background:var(--blue);box-shadow:0 4px 0 var(--blue-d)}
+.btn.gold{background:var(--gold);box-shadow:0 4px 0 var(--gold-d);color:#2a2008}
+.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none;padding:6px 12px;font-size:.9rem}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.row{display:flex;gap:10px;margin-top:14px}
+.row>*{flex:1}
+.or{margin:18px 0 0;color:var(--muted);display:flex;align-items:center;gap:10px;font-size:.9rem}
+.or:before,.or:after{content:"";flex:1;height:2px;background:var(--line)}
+.msg{min-height:1.4em;margin-top:12px;color:var(--red);font-weight:700}
+.waiting .code{font-size:2.5rem;font-weight:800;letter-spacing:8px;color:var(--ink);background:var(--paper2);border:3px dashed var(--red);border-radius:18px;padding:6px 10px;margin:10px 0;font-family:"Roboto Slab"}
+.waiting .link{font-size:.85rem;word-break:break-all;color:var(--muted);margin:8px 0}
+.dots:after{content:"";animation:dots 1.4s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+
+/* ---------- Game ---------- */
+#game{max-width:1280px;margin:0 auto;padding:10px 16px 24px}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;color:#e9e3d2}
+header .title{font-family:"Roboto Slab";font-weight:900;font-size:1.8rem;letter-spacing:3px;line-height:1;color:var(--red);text-shadow:2px 2px 0 #000}
+header .info{font-weight:600;color:#aab3c8;font-size:.9rem}
+header .info b{color:#fff}
+header .sp{flex:1}
+.turnChip{padding:4px 12px;border-radius:999px;font-weight:800;background:rgba(255,255,255,.1);color:#d3d9e6;font-size:.9rem}
+.turnChip.me{background:var(--gold);color:#2a2008;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 5px rgba(240,189,61,.25)}}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:16px;align-items:start}
+.colMain,.colSide{display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel{background:var(--paper);border:2px solid #dccca6;border-radius:var(--radius);padding:12px 14px;box-shadow:0 8px 22px rgba(0,0,0,.3);min-width:0}
+.ptitle{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1rem;margin-bottom:8px;flex-wrap:wrap}
+.ptitle .sp{flex:1}
+.small{font-size:.83rem;color:var(--muted);font-weight:600}
+
+/* case file */
+.casep{background:linear-gradient(#fbf6ea,#f6edd8);position:relative;overflow:hidden}
+.casep:before{content:"MẬT";position:absolute;right:-6px;top:6px;transform:rotate(12deg);font-family:"Roboto Slab";font-weight:900;font-size:1.6rem;color:rgba(210,58,68,.16);border:3px solid rgba(210,58,68,.16);padding:0 10px;border-radius:8px;letter-spacing:4px}
+.caseno{font-family:"Roboto Slab";font-weight:700;font-size:.78rem;letter-spacing:2px;color:var(--red);text-transform:uppercase}
+.casep h2{margin:2px 0 6px;font-family:"Roboto Slab";font-weight:900;font-size:1.35rem;line-height:1.2}
+.scene{background:#fde9e7;border:2px solid #f0b8b2;border-radius:12px;padding:8px 10px;line-height:1.55;font-size:.95rem}
+.casep .small{margin-top:6px}
+
+/* status */
+.status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--paper2);border:2px solid #e3d4b0;border-radius:14px;padding:8px 12px;min-height:50px;font-weight:600;line-height:1.45}
+.status.me{background:#fff3cf;border-color:var(--gold)}
+.status .tx{flex:1;min-width:200px}
+.lastline{margin-top:6px;font-size:.86rem;color:var(--muted);font-weight:600;line-height:1.5}
+.actions{margin-top:10px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
+.actions:empty{display:none}
+.hint{color:var(--muted);font-weight:600;text-align:center;font-size:.86rem;width:100%}
+.confirm{width:100%;display:grid;gap:8px}
+.confirm .q{text-align:center;font-weight:700}
+.confirm .btn{width:100%;flex-direction:column;gap:2px;padding:9px 12px}
+.confirm .btn small{font-weight:600;opacity:.9;font-size:.8rem}
+.confirm .btn .chip{background:rgba(255,255,255,.92)}
+.pickArea{width:100%}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:3px;padding:0 7px 0 5px;border-radius:999px;font-weight:700;white-space:nowrap;line-height:1.55;font-size:.95em;vertical-align:baseline;color:var(--ink)}
+.chip.s{background:color-mix(in srgb,var(--c) 15%,#fff);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--c) 55%,#fff);color:color-mix(in srgb,var(--c) 70%,#000)}
+.chip.w{background:#fbe6e1;box-shadow:inset 0 0 0 1.5px #ebb0a6}
+.chip.l{background:#e2edf9;box-shadow:inset 0 0 0 1.5px #a9c3e6}
+
+/* grid */
+.gridwrap{overflow-x:auto;padding:2px 0 6px;-webkit-overflow-scrolling:touch}
+.mg{border-collapse:collapse;margin:0 auto;--cell:42px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.mg.n5{--cell:38px}
+.mg.n3{--cell:48px}
+.mg th{font-weight:700;padding:0}
+.mg .ch{vertical-align:bottom;padding:0 0 4px;width:var(--cell);min-width:var(--cell)}
+.mg .ch .hd{display:flex;flex-direction:column;align-items:center;gap:3px}
+.mg .em{font-size:1.25rem;line-height:1}
+.mg .ch .nm{writing-mode:vertical-rl;transform:rotate(180deg);font-size:.76rem;max-height:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mg .rh{text-align:left;padding:0 8px 0 0;white-space:nowrap}
+.mg .rh .rr{display:flex;align-items:center;gap:6px;font-size:.84rem;max-width:180px}
+.mg .rh .rn{overflow:hidden;text-overflow:ellipsis}
+.mg .av{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--c);font-size:.85rem;flex:none;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+.mg td.c{width:var(--cell);height:var(--cell);min-width:var(--cell);border:1px solid var(--cellb);background:#fffdf6;text-align:center;vertical-align:middle;cursor:pointer;position:relative;padding:0}
+.mg td.bl{border-left:3px solid var(--ink)} .mg td.br{border-right:3px solid var(--ink)}
+.mg td.bt{border-top:3px solid var(--ink)} .mg td.bb{border-bottom:3px solid var(--ink)}
+.mg td.c.hl{background:#fff4d2}
+.mg td.c.hx{background:#ffe9a8}
+.mg td.void{border:0;background:transparent}
+.mg .ghd{font-family:"Roboto Slab";font-size:.68rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:center;padding-bottom:2px}
+.tk{display:grid;place-items:center;width:76%;height:76%;margin:auto;border-radius:50%;color:#fff;font-weight:900;font-size:calc(var(--cell)*.46);line-height:1;box-shadow:inset 0 -3px 0 rgba(0,0,0,.22),0 1px 3px rgba(0,0,0,.35);position:relative}
+.tk.y{background:var(--yes)} .tk.n{background:var(--red)}
+.tk .by{position:absolute;right:-3px;top:-3px;width:10px;height:10px;border-radius:50%;border:2px solid #fff}
+.im{color:var(--red);opacity:.3;font-weight:900;font-size:calc(var(--cell)*.5)}
+.nt{font-family:"Patrick Hand",cursive;font-size:calc(var(--cell)*.7);line-height:1;display:block;transform:rotate(-6deg)}
+.nt.y{color:#23804c} .nt.n{color:#b8434a}
+.mg.sharing td.c{cursor:crosshair}
+.mg.sharing td.c.open:hover{outline:3px solid var(--gold);outline-offset:-3px}
+.mg td.c.sel{outline:4px solid var(--gold);outline-offset:-4px;background:#fff1c2}
+.mg td.c.fx{animation:fx 1.6s ease-out}
+.mg td.c.fx .tk{animation:pop .5s ease-out}
+@keyframes fx{0%{background:#ffd76a}100%{background:#fffdf6}}
+@keyframes pop{0%{transform:scale(1.6)}100%{transform:scale(1)}}
+.mg td.c.sol:after{content:"";position:absolute;inset:4px;border:2.5px dashed var(--gold-d);border-radius:50%;pointer-events:none}
+.gridopts{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:6px}
+.opt{display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer;text-align:left;font-size:.88rem;margin:0}
+.opt input{width:18px;height:18px;accent-color:var(--red)}
+.legendLine{margin-top:6px;line-height:1.6}
+.lg{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;color:#fff;font-size:.7rem;font-weight:900;vertical-align:-3px}
+.lg.y{background:var(--yes)} .lg.n{background:var(--red)}
+
+/* roster */
+.roster{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.rh2{font-family:"Roboto Slab";font-weight:700;font-size:.78rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.ri{display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px dashed var(--line)}
+.ri:last-child{border-bottom:0}
+.ri .av,.ri .ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:1.1rem;flex:none}
+.ri .av{background:var(--c);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+.ri .ic{background:var(--paper2)}
+.ri b{display:block;font-size:.88rem;line-height:1.25}
+.ri .at{font-size:.76rem;color:var(--muted);font-weight:600;line-height:1.35}
+
+/* players */
+.pl{border:2px solid var(--line);border-radius:12px;padding:7px 10px;display:flex;align-items:center;gap:8px;font-weight:800;background:#fff}
+.pl+.pl{margin-top:7px}
+.pl.active{border-color:var(--gold);box-shadow:0 0 0 3px rgba(240,189,61,.25)}
+.pl .dot{width:12px;height:12px;border-radius:50%;flex:none}
+.pl .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:64px}
+.pill{font-size:.75rem;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--paper2);color:var(--muted);white-space:nowrap}
+.pill.on{background:var(--gold);color:#2a2008}
+
+/* clues */
+.clues{display:flex;flex-direction:column;gap:6px;max-height:440px;overflow:auto;padding-right:2px}
+.clue{display:flex;gap:8px;align-items:flex-start;background:#fffdf6;border:1.5px solid var(--line);border-radius:10px;padding:6px 8px;font-size:.9rem;line-height:1.6}
+.clue .cc{flex:none;font-family:"Roboto Slab";font-weight:700;background:var(--ink);color:#fff;border-radius:6px;padding:0 5px;font-size:.78rem;min-width:30px;text-align:center;margin-top:3px;line-height:1.5}
+.clue .ct{flex:1;min-width:0}
+.clue .cm{flex:none;font-size:.8rem;margin-top:2px}
+.clue.scene{background:#fde9e7;border-color:#f0b8b2}
+.clue.scene .cc{background:var(--red)}
+.clue.acc{background:#f1efe9;color:#5f5a4e}
+.clue.acc .cc{background:#8b8577}
+.clue.pub .cc{background:var(--blue)}
+.clue.new{animation:newc 3s ease-out}
+@keyframes newc{0%,30%{background:#fff0b3;border-color:var(--gold)}}
+.empty{color:var(--muted);font-size:.88rem;font-style:italic}
+
+/* folders */
+.folders{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.folder{background:#ece0c2;border-radius:12px;padding:6px 5px;border:2px solid #dccb9f}
+.fh{font-weight:800;font-size:.76rem;text-align:center;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tiles{display:flex;flex-direction:column;gap:6px}
+.tile{position:relative;border:0;border-radius:9px;padding:7px 3px 5px;display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:800;min-height:46px;width:100%;color:var(--ink)}
+.tile.back{background:repeating-linear-gradient(135deg,#2c3658 0 6px,#252f4e 6px 12px);color:#ece5cf;box-shadow:0 3px 0 #11162a}
+.tile.mine{background:#fffdf6;box-shadow:0 3px 0 #cdbd96}
+.tile .code{font-family:"Roboto Slab";font-size:.95rem;line-height:1}
+.tile .cat{font-size:.8rem;line-height:1.2;letter-spacing:-1px;background:rgba(255,255,255,.88);border-radius:6px;padding:1px 4px}
+.tile.mine .cat{background:var(--paper2)}
+.tile .cn{display:none;font-size:.7rem;font-weight:600;opacity:.85;line-height:1.2}
+.pickArea .tile .cn{display:block}
+.tile .eyes{position:absolute;top:3px;right:3px;display:flex;gap:2px}
+.eye{width:9px;height:9px;border-radius:50%;border:1.5px solid #fff;display:block}
+.tile .pb{position:absolute;top:1px;left:3px;font-size:.66rem}
+.tile.pick{cursor:pointer;outline:3px solid var(--gold);outline-offset:1px}
+.tile.pick:hover{transform:translateY(-2px)}
+.tile.chosen{outline:3px solid var(--red);outline-offset:1px}
+.tile:not(.pick){cursor:default}
+.catlegend{margin-top:8px;line-height:1.6}
+
+/* log */
+.log{max-height:230px;overflow:auto;font-size:.86rem;display:flex;flex-direction:column;gap:2px;line-height:1.6}
+.log div{padding:2px 0;border-bottom:1px dashed var(--line)}
+.log div.sys{color:var(--red);font-weight:800}
+.log div.pv{color:var(--blue-d)}
+
+/* overlay */
+.overlay{position:fixed;inset:0;background:rgba(6,9,18,.62);display:grid;place-items:center;padding:16px;z-index:50}
+.modal{background:var(--paper);border-radius:24px;padding:20px 18px;max-width:580px;width:100%;border:3px solid #dccca6;box-shadow:0 20px 50px rgba(0,0,0,.45);max-height:92vh;overflow:auto}
+.modal h2{margin:0 0 8px;font-family:"Roboto Slab";font-weight:900;font-size:1.6rem;color:var(--ink);text-align:center;line-height:1.15}
+.modal .rules{font-size:.93rem;line-height:1.55}
+.modal .rules h3{margin:12px 0 4px;color:var(--red);font-family:"Roboto Slab"}
+.modal .rules ul{margin:4px 0;padding-left:20px}
+.ncard{background:#fffdf6;border:2px solid var(--line);border-radius:14px;padding:10px 12px;margin:8px 0;line-height:1.65}
+.ncard .nh{font-family:"Roboto Slab";font-weight:700;font-size:.82rem;color:var(--red);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+.accrow{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.accrow .opt2{border:2px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px 4px 6px;font-weight:700;font-size:.9rem;display:inline-flex;align-items:center;gap:4px;color:var(--ink)}
+.accrow .opt2.on{border-color:var(--red);background:#fde9e7;box-shadow:0 0 0 2px rgba(210,58,68,.25)}
+.accrow .opt2:disabled{opacity:.55;cursor:default}
+.accsum{background:var(--paper2);border-radius:12px;padding:8px 10px;text-align:center;font-weight:700;line-height:1.7;margin:6px 0}
+.truth{font-size:1.05rem;text-align:center;background:#fde9e7;border:2px solid #f0b8b2;border-radius:14px;padding:10px;line-height:1.8;margin:8px 0}
+.soltab{width:100%;border-collapse:collapse;font-size:.88rem;margin:6px 0}
+.soltab td{padding:4px 4px;border-bottom:1px dashed var(--line)}
+.soltab tr.m td{background:#fff0b3;font-weight:800}
+.score{display:flex;justify-content:center;gap:16px;font-weight:800;margin:8px 0}
+.score span{background:var(--paper2);border-radius:12px;padding:6px 14px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,40px);opacity:0;background:#0c1120;color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;transition:.25s;z-index:60;max-width:calc(100vw - 32px);text-align:center;pointer-events:none;line-height:1.5}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.toast .chip{font-size:.9em}
+
+@media (max-width:1000px){
+  .layout{display:flex;flex-direction:column;align-items:stretch}
+  .colMain,.colSide{display:contents}
+  .casep{order:1} .statusp{order:2} .gridp{order:3} .cluesp{order:4} .foldersp{order:5} .rosterp{order:6} .playersp{order:7} .logp{order:8}
+  .clues{max-height:none}
+}
+@media (max-width:640px){
+  #game{padding:8px 16px 20px}
+  .panel{padding:10px}
+  header .title{font-size:1.4rem}
+  .roster{grid-template-columns:1fr}
+  .setgrid{grid-template-columns:1fr 1fr}
+  .setgrid>div:first-child{grid-column:1/-1}
+  .gridp{padding:10px 6px}
+  .mg{--cell:30px} .mg.n5{--cell:28px} .mg.n3{--cell:38px}
+  .mg .ch .nm{display:none}
+  .mg .em{font-size:1rem}
+  .mg .rh{padding-right:4px}
+  .mg .rh .rr{gap:4px}
+  .mg .rh .rn{white-space:normal;font-size:.64rem;line-height:1.12;max-width:58px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .mg.n5 .rh .rn{display:none}
+  .mg .av{width:20px;height:20px;font-size:.72rem}
+  .mg td.bl{border-left-width:2px} .mg td.br{border-right-width:2px} .mg td.bt{border-top-width:2px} .mg td.bb{border-bottom-width:2px}
+  .tile{min-height:42px}
+  .pickArea .tile .cn{display:none}
+  .clue{font-size:.86rem}
+  header{gap:8px}
+  header .btn.ghost{padding:5px 9px;font-size:.82rem}
+  header .bl2{display:none}
+}
+</style>
+</head>
+<body>
+<!-- ============ LOBBY ============ -->
+<section id="lobby">
+  <div class="lobby-card">
+    <div id="lobbyMain">
+      <svg class="logoSvg" viewBox="0 0 132 92" aria-hidden="true">
+        <g transform="translate(6,6)">
+          <rect width="72" height="72" rx="7" fill="#fffdf6" stroke="#1d2233" stroke-width="3"/>
+          <path d="M24 0V72M48 0V72M0 24H72M0 48H72" stroke="#d9cba8" stroke-width="2"/>
+          <path d="M6 12l5 6 8-11" stroke="#2b9358" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M30 6l12 12M42 6L30 18M54 30l12 12M66 30L54 42M6 54l12 12M18 54L6 66" stroke="#d23a44" stroke-width="4" stroke-linecap="round"/>
+          <path d="M30 37l5 6 8-11" stroke="#2b9358" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <circle cx="88" cy="50" r="22" fill="rgba(255,255,255,.35)" stroke="#1d2233" stroke-width="7"/>
+        <path d="M104 66l18 18" stroke="#1d2233" stroke-width="10" stroke-linecap="round"/>
+        <path d="M76 40a14 14 0 0 1 12-8" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </svg>
+      <h1>MURDLE</h1>
+      <div class="sub">Thám tử đấu trí</div>
+      <p class="tag">Phá án bằng lưới suy luận · 2 thám tử · tiếng Việt</p>
+      <label for="nameInput">Tên thám tử</label>
+      <input id="nameInput" maxlength="16" placeholder="VD: Hoàng" autocomplete="off">
+      <div class="setgrid">
+        <div><label for="nSel">Vụ án</label><select id="nSel"></select></div>
+        <div><label for="accSel">Lượt buộc tội</label><select id="accSel"></select></div>
+        <div><label for="strictSel">Chia sẻ thiếu căn cứ</label><select id="strictSel"></select></div>
+      </div>
+      <div class="row"><button class="btn red" id="createBtn">Tạo phòng</button></div>
+      <div class="or">hoặc vào phòng của bạn chơi</div>
+      <label for="codeInput">Mã phòng</label>
+      <input id="codeInput" maxlength="5" placeholder="ABCDE" autocomplete="off">
+      <div class="row"><button class="btn" id="joinBtn">Vào phòng</button></div>
+      <div class="row"><button class="btn ghost" id="rulesBtn0">Xem luật chơi</button></div>
+      <div class="msg" id="lobbyMsg"></div>
+    </div>
+    <div id="lobbyWait" class="waiting hidden">
+      <h1 style="font-size:2.2rem">MURDLE</h1>
+      <h2 style="margin:10px 0 0">Phòng đã tạo!</h2>
+      <p class="tag">Gửi mã này cho thám tử đối thủ</p>
+      <div class="code" id="waitCode">-----</div>
+      <div class="link" id="waitLink"></div>
+      <div class="row"><button class="btn red" id="copyBtn">Sao chép link</button></div>
+      <p class="tag" style="margin-top:16px">Đang chờ thám tử thứ hai<span class="dots"></span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GAME ============ -->
+<section id="game" class="hidden">
+  <header>
+    <span class="title">MURDLE</span>
+    <span class="info" id="roomInfo"></span>
+    <span class="turnChip" id="turnChip"></span>
+    <span class="sp"></span>
+    <button class="btn ghost" id="resignBtn" title="Đầu hàng">🏳️<span class="bl2"> Đầu hàng</span></button>
+    <button class="btn ghost" id="rulesBtn">Luật</button>
+  </header>
+  <div class="layout">
+    <div class="colMain">
+      <div class="panel casep" id="casePanel"></div>
+      <div class="panel statusp">
+        <div class="status" id="status"></div>
+        <div class="lastline" id="lastline"></div>
+        <div class="actions" id="actions"></div>
+      </div>
+      <div class="panel gridp">
+        <div class="ptitle">🧩 Lưới suy luận <span class="sp"></span><span class="small" id="gridMode">Chạm ô để ghi chú riêng</span></div>
+        <div class="gridwrap"><table class="mg" id="grid"></table></div>
+        <div class="gridopts">
+          <label class="opt"><input type="checkbox" id="autoX"> Đánh ✓ thì tự gạch ✗ hàng & cột</label>
+          <button class="btn ghost" id="clearNotes">Xoá ghi chú</button>
+        </div>
+        <div class="small legendLine">
+          <span class="lg y">✓</span> <span class="lg n">✗</span> tròn = <b>bảng chung</b> (đã chia sẻ, chắc chắn đúng; chấm màu = ai chia sẻ) ·
+          <span class="im" style="font-size:1rem">✗</span> mờ = suy ra từ ✓ chung ·
+          <span class="nt y" style="display:inline;font-size:1.2rem">✓</span><span class="nt n" style="display:inline;font-size:1.2rem">✗</span> viết tay = ghi chú riêng của bạn
+        </div>
+      </div>
+      <div class="panel rosterp"><div class="ptitle">🗃️ Hồ sơ nhân vật & vật chứng</div><div class="roster" id="roster"></div></div>
+    </div>
+    <div class="colSide">
+      <div class="panel playersp"><div class="ptitle">🕵️ Thám tử <span class="sp"></span><span class="small" id="roundInfo"></span></div><div id="players"></div></div>
+      <div class="panel cluesp"><div class="ptitle">📓 Manh mối bạn biết <span class="sp"></span><span class="small" id="clueCount"></span></div><div class="clues" id="clues"></div></div>
+      <div class="panel foldersp">
+        <div class="ptitle">🗂️ Hồ sơ chứng cứ <span class="sp"></span><span class="small" id="deckInfo"></span></div>
+        <div class="folders" id="folders"></div>
+        <div class="small catlegend">Mặt sau thẻ cho biết loại manh mối: 👤🗡️ nghi phạm–hung khí · 👤📍 nghi phạm–địa điểm · 🗡️📍 hung khí–địa điểm · 🔀 tổng hợp. Chấm màu = ai đã xem, 📢 = đã công khai.</div>
+      </div>
+      <div class="panel logp"><div class="ptitle">📜 Nhật ký</div><div class="log" id="log"></div></div>
+    </div>
+  </div>
+</section>
+
+<div id="overlay" class="overlay hidden"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= DỮ LIỆU ================= */
+// Nghi phạm: chiều cao (cm, không trùng nhau), tay thuận, màu mắt.
+const SUSPECTS=[
+  {n:"Đô Đốc Xanh Biển",  e:"⚓", c:"#2f5d9e", h:182, hand:"phải", eye:"xanh dương", bio:"Về hưu đã lâu nhưng vẫn ra lệnh cho cả nhà."},
+  {n:"Bà Hoàng Tím",      e:"👑", c:"#7d3c98", h:160, hand:"trái", eye:"nâu",        bio:"Tự xưng là hậu duệ của một vương triều không ai nhớ tên."},
+  {n:"Thầy Đồ Mực Tàu",   e:"🖌️", c:"#4a5260", h:168, hand:"phải", eye:"đen",        bio:"Nói chuyện toàn bằng câu đối."},
+  {n:"Ca Sĩ Hồng Phấn",   e:"🎤", c:"#d9579a", h:157, hand:"phải", eye:"nâu",        bio:"Ngôi sao một bài hit, hát to nhất lúc nửa đêm."},
+  {n:"Bếp Trưởng Nghệ",   e:"🧑‍🍳", c:"#d99a1e", h:174, hand:"trái", eye:"đen",       bio:"Món nào cũng ngon, trừ món trả thù."},
+  {n:"HLV Mâm Xôi",       e:"🏋️", c:"#c0304a", h:186, hand:"phải", eye:"xám",        bio:"Chưa từng thua một ván vật tay nào."},
+  {n:"Bác Sĩ Bạc",        e:"🩺", c:"#7f8c99", h:165, hand:"trái", eye:"xanh dương", bio:"Biết rõ liều lượng của mọi loại thuốc."},
+  {n:"Hoạ Sĩ Lục Bảo",    e:"🎨", c:"#1e8c5a", h:171, hand:"phải", eye:"xanh lá",    bio:"Vẽ chân dung ai thì người đó… gặp chuyện."},
+  {n:"Cô Giáo Cam",       e:"🍊", c:"#e8702a", h:159, hand:"trái", eye:"nâu",        bio:"Chấm điểm cả lời khai của cảnh sát."},
+  {n:"Ông Trùm Vàng Kim", e:"💰", c:"#b8921c", h:177, hand:"phải", eye:"hổ phách",   bio:"Giàu đến mức không nhớ nổi mình nợ ai."},
+  {n:"Sư Cô Nâu Sồng",    e:"📿", c:"#8a5a3b", h:163, hand:"phải", eye:"đen",        bio:"Lúc nào cũng điềm tĩnh. Quá điềm tĩnh."},
+  {n:"Nhà Thám Hiểm Rêu", e:"🧭", c:"#5f7f3a", h:179, hand:"trái", eye:"xanh lá",    bio:"Từng lạc trong rừng ba tháng và rất thích kể chuyện đó."},
+  {n:"Kỹ Sư Xám Chì",     e:"🤖", c:"#59626e", h:170, hand:"phải", eye:"xám",        bio:"Sửa được mọi thứ, kể cả bằng chứng."},
+  {n:"Bá Tước Đỏ Thẫm",   e:"🦇", c:"#8b1a2b", h:188, hand:"trái", eye:"hổ phách",   bio:"Chỉ ra ngoài khi trời đã tối."},
+];
+const WEAPONS=[
+  {n:"Dao găm",        e:"🗡️", wt:"nhẹ",  mat:"kim loại"},
+  {n:"Dây thừng",      e:"🪢", wt:"nhẹ",  mat:"sợi vải"},
+  {n:"Chân nến đồng",  e:"🕯️", wt:"vừa",  mat:"kim loại"},
+  {n:"Ly rượu độc",    e:"🍷", wt:"nhẹ",  mat:"thuỷ tinh"},
+  {n:"Búa tạ",         e:"🔨", wt:"nặng", mat:"kim loại"},
+  {n:"Gậy gỗ",         e:"🏏", wt:"vừa",  mat:"gỗ"},
+  {n:"Bình gốm cổ",    e:"🏺", wt:"nặng", mat:"gốm"},
+  {n:"Từ điển dày",    e:"📕", wt:"vừa",  mat:"giấy"},
+  {n:"Chậu xương rồng",e:"🌵", wt:"vừa",  mat:"gốm"},
+  {n:"Ô đen",          e:"☂️", wt:"nhẹ",  mat:"sợi vải"},
+  {n:"Tượng đá",       e:"🗿", wt:"nặng", mat:"đá"},
+  {n:"Chảo gang",      e:"🍳", wt:"nặng", mat:"kim loại"},
+  {n:"Khăn lụa",       e:"🧣", wt:"nhẹ",  mat:"sợi vải"},
+  {n:"Chai sâm panh",  e:"🍾", wt:"vừa",  mat:"thuỷ tinh"},
+  {n:"Mái chèo",       e:"🛶", wt:"nặng", mat:"gỗ"},
+];
+const LOCATIONS=[
+  {n:"Thư viện",      e:"📚", io:"trong nhà"},
+  {n:"Nhà bếp",       e:"🍽️", io:"trong nhà"},
+  {n:"Hầm rượu",      e:"🛢️", io:"trong nhà"},
+  {n:"Vườn hồng",     e:"🌹", io:"ngoài trời"},
+  {n:"Bến thuyền",    e:"⛵", io:"ngoài trời"},
+  {n:"Tháp chuông",   e:"🔔", io:"trong nhà"},
+  {n:"Phòng tranh",   e:"🖼️", io:"trong nhà"},
+  {n:"Nhà kính",      e:"🪴", io:"trong nhà"},
+  {n:"Mê cung cây",   e:"🌳", io:"ngoài trời"},
+  {n:"Sân thượng",    e:"🌇", io:"ngoài trời"},
+  {n:"Chuồng ngựa",   e:"🐎", io:"ngoài trời"},
+  {n:"Đài phun nước", e:"⛲", io:"ngoài trời"},
+  {n:"Phòng ngủ",     e:"🛏️", io:"trong nhà"},
+  {n:"Ao cá",         e:"🐟", io:"ngoài trời"},
+  {n:"Nhà để xe",     e:"🚗", io:"trong nhà"},
+];
+const VENUES=["Biệt thự Hoa Sữa","Lâu đài Mù Sương","Khách sạn Bình Minh","Du thuyền Sao Biển","Trang viên Đồi Thông","Học viện Thám Tử","Nhà hát Lam Hồng","Đồn điền Cà Phê Gió"];
+const VICTIMS=["Ông Chủ Nhà Giàu","Đặc Vụ X","Nhà Phê Bình Ẩm Thực","Luật Sư Di Chúc","Quản Gia Lâm","Bà Bá Tước Già","Nhà Văn Trinh Thám","Ảo Thuật Gia Mờ Ám","Thủ Quỹ Câu Lạc Bộ"];
+const TITLES=["Đêm mưa ở {v}","Bữa tiệc cuối cùng ở {v}","Tiếng thét lúc nửa đêm ở {v}","Ván bài định mệnh ở {v}","Bí ẩn ở {v}","Chiếc đồng hồ ngừng chạy ở {v}","Cúp điện ở {v}"];
+const FOLDERS=[{n:"Lời khai",e:"🗣️"},{n:"Pháp y",e:"🔬"},{n:"Camera",e:"📹"},{n:"Mật báo",e:"✉️"}];
+const CATS={SW:{e:"👤🗡️",n:"Nghi phạm – Hung khí"},SL:{e:"👤📍",n:"Nghi phạm – Địa điểm"},WL:{e:"🗡️📍",n:"Hung khí – Địa điểm"},MIX:{e:"🔀",n:"Tổng hợp"}};
+
+/* ==ENGINE START== */
+// Thế giới khả dĩ = (p, q): p[nghi phạm] = hung khí, q[nghi phạm] = địa điểm (hai hoán vị).
+// Mỗi manh mối là một vị từ trên thế giới; "chứng minh được" = đúng trên mọi thế giới còn khớp.
+const range = n => Array.from({length:n},(_,i)=>i);
+function rnd(n){ const a=new Uint32Array(1); crypto.getRandomValues(a); return a[0]%n; }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const pick = a => a[rnd(a.length)];
+const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+const invert = p => { const r=Array(p.length); p.forEach((v,i)=>r[v]=i); return r; };
+
+const PERMS={};
+function perms(n){
+  if(PERMS[n]) return PERMS[n];
+  const list=[], a=range(n);
+  const rec=k=>{ if(k===n){ list.push(a.slice()); return; } for(let i=k;i<n;i++){ [a[k],a[i]]=[a[i],a[k]]; rec(k+1); [a[k],a[i]]=[a[i],a[k]]; } };
+  rec(0);
+  return PERMS[n]={list, inv:list.map(invert)};
+}
+function filterW(n,idx,f){
+  const {list,inv}=perms(n), M=list.length, out=[];
+  for(const wi of idx){ const i=(wi/M)|0, j=wi-i*M; if(f(list[i],list[j],inv[i],inv[j])) out.push(wi); }
+  return out;
+}
+
+const SA=["hand","eye","tall"], WA=["wt","mat"];
+const sAttr=(cs,s,a)=> a==="tall" ? (cs.sus[s].h>=170?"cao":"thấp") : cs.sus[s][a];
+const wAttr=(cs,w,a)=> cs.wea[w][a];
+const lAttr=(cs,l)=> cs.loc[l].io;
+const who=(d,ip,iq)=> d.k==="s" ? d.i : d.k==="w" ? ip[d.i] : iq[d.i];
+const murdererOf=(sc,ip,iq)=> sc.k==="l" ? iq[sc.i] : ip[sc.i];
+// ô lưới: sw (nghi phạm a – hung khí b), sl (nghi phạm a – địa điểm b), wl (hung khí a – địa điểm b)
+const cellVal=(c,p,q,ip)=> c.t==="sw" ? p[c.a]===c.b : c.t==="sl" ? q[c.a]===c.b : q[ip[c.a]]===c.b;
+const cellKey=c=>c.t+c.a+c.b;
+
+function predOf(c,cs){
+  switch(c.t){
+    case "sw": return p=>(p[c.s]===c.w)===c.v;
+    case "sl": return (p,q)=>(q[c.s]===c.l)===c.v;
+    case "wl": return (p,q,ip)=>(q[ip[c.w]]===c.l)===c.v;
+    case "sw2": return p=>p[c.s]===c.a||p[c.s]===c.b;
+    case "sl2": return (p,q)=>q[c.s]===c.a||q[c.s]===c.b;
+    case "wl2": return (p,q,ip)=>{ const l=q[ip[c.w]]; return l===c.a||l===c.b; };
+    case "wAttrS": return (p,q,ip)=>sAttr(cs,ip[c.w],c.a)===c.val;
+    case "lAttrS": return (p,q,ip,iq)=>sAttr(cs,iq[c.l],c.a)===c.val;
+    case "sAttrW": return p=>wAttr(cs,p[c.s],c.a)===c.val;
+    case "lAttrW": return (p,q,ip,iq)=>wAttr(cs,p[iq[c.l]],c.a)===c.val;
+    case "sAttrL": return (p,q)=>lAttr(cs,q[c.s])===c.val;
+    case "wAttrL": return (p,q,ip)=>lAttr(cs,q[ip[c.w]])===c.val;
+    case "taller": return (p,q,ip,iq)=>cs.sus[who(c.x,ip,iq)].h>cs.sus[who(c.y,ip,iq)].h;
+    case "notBoth": return (p,q)=>p[c.s]!==c.w&&q[c.s]!==c.l;
+    case "cell": return (p,q,ip)=>cellVal(c.cell,p,q,ip)===c.v;
+    case "notTriple": return (p,q,ip,iq)=>{ const m=murdererOf(cs.scene,ip,iq); return !(m===c.s&&p[m]===c.w&&q[m]===c.l); };
+  }
+  throw new Error("Manh mối lạ: "+c.t);
+}
+
+// ---- câu chữ manh mối ({s0} {w1} {l2} được giao diện thay bằng thẻ tên) ----
+function aliasesOf(cs,s){
+  const S=cs.sus, me=S[s], hs=S.map(x=>x.h), out=[];
+  if(me.h===Math.max(...hs)) out.push("người cao nhất");
+  if(me.h===Math.min(...hs)) out.push("người thấp nhất");
+  if(S.filter(x=>x.hand===me.hand).length===1) out.push(`người duy nhất thuận tay ${me.hand}`);
+  if(S.filter(x=>x.eye===me.eye).length===1) out.push(`người duy nhất có mắt màu ${me.eye}`);
+  return out;
+}
+function subj(cs,s){ // [đầu câu, giữa câu]
+  const al=aliasesOf(cs,s);
+  if(al.length&&rnd(100)<35){ const a=pick(al); return [cap(a),a]; }
+  return [`{s${s}}`,`{s${s}}`];
+}
+const sPhrase=(a,v)=> a==="hand" ? `thuận tay ${v}` : a==="eye" ? `có mắt màu ${v}` : v==="cao" ? "cao từ 1m70 trở lên" : "cao dưới 1m70";
+const wPhrase=(a,v)=> a==="mat" ? `một thứ làm bằng ${v}` : v==="nặng" ? "một món đồ nặng" : v==="nhẹ" ? "một món đồ nhẹ" : "một món đồ nặng vừa phải";
+const descOf=d=> d.k==="s" ? `{s${d.i}}` : d.k==="w" ? `người cầm {w${d.i}}` : `người ở {l${d.i}}`;
+function clueText(c,cs){
+  const W=i=>`{w${i}}`, L=i=>`{l${i}}`;
+  const two=(a,b)=> rnd(2)?[a,b]:[b,a];
+  switch(c.t){
+    case "sw": { const [A,a]=subj(cs,c.s); return c.v
+      ? pick([`${A} mang theo ${W(c.w)}.`,`Dấu vân tay của ${a} có trên ${W(c.w)}.`,`Có người thấy ${a} cầm ${W(c.w)}.`])
+      : pick([`${A} không hề cầm ${W(c.w)}.`,`Trên ${W(c.w)} không có dấu vân tay của ${a}.`,`${A} chưa từng chạm vào ${W(c.w)}.`]); }
+    case "sl": { const [A,a]=subj(cs,c.s); return c.v
+      ? pick([`${A} đã ở ${L(c.l)}.`,`Camera ghi lại ${a} ở ${L(c.l)}.`,`Một nhân chứng thấy ${a} tại ${L(c.l)}.`])
+      : pick([`${A} không hề đến ${L(c.l)}.`,`${A} có bằng chứng ngoại phạm: không ở ${L(c.l)}.`]); }
+    case "wl": return c.v
+      ? pick([`${W(c.w)} được tìm thấy ở ${L(c.l)}.`,`Ai đó đã mang ${W(c.w)} tới ${L(c.l)}.`])
+      : pick([`Không ai mang ${W(c.w)} tới ${L(c.l)}.`,`${W(c.w)} không có ở ${L(c.l)}.`]);
+    case "sw2": { const [A]=subj(cs,c.s), [x,y]=two(c.a,c.b); return pick([`${A} cầm ${W(x)} hoặc ${W(y)}.`,`${A} mang theo ${W(x)}, hoặc là ${W(y)}.`]); }
+    case "sl2": { const [A,a]=subj(cs,c.s), [x,y]=two(c.a,c.b); return pick([`${A} đã ở ${L(x)} hoặc ${L(y)}.`,`Đêm đó ${a} ở ${L(x)}, hoặc là ${L(y)}.`]); }
+    case "wl2": { const [x,y]=two(c.a,c.b); return `${W(c.w)} nằm ở ${L(x)} hoặc ${L(y)}.`; }
+    case "wAttrS": return pick([`Người cầm ${W(c.w)} ${sPhrase(c.a,c.val)}.`,`Kẻ mang ${W(c.w)} ${sPhrase(c.a,c.val)}.`]);
+    case "lAttrS": return pick([`Người ở ${L(c.l)} ${sPhrase(c.a,c.val)}.`,`Người có mặt ở ${L(c.l)} ${sPhrase(c.a,c.val)}.`]);
+    case "sAttrW": { const [A]=subj(cs,c.s); return `${A} mang theo ${wPhrase(c.a,c.val)}.`; }
+    case "lAttrW": return pick([`Thứ được tìm thấy ở ${L(c.l)} là ${wPhrase(c.a,c.val)}.`,`Ở ${L(c.l)} có ${wPhrase(c.a,c.val)}.`]);
+    case "sAttrL": { const [A,a]=subj(cs,c.s); return c.val==="trong nhà"
+      ? pick([`${A} ở trong nhà suốt buổi tối.`,`Giày của ${a} sạch bong — người này không hề ra ngoài trời.`])
+      : pick([`${A} ở ngoài trời suốt buổi tối.`,`Giày của ${a} dính đầy bùn — người này đã ở ngoài trời.`]); }
+    case "wAttrL": return `${W(c.w)} được giấu ở một nơi ${c.val}.`;
+    case "taller": return `${cap(descOf(c.x))} cao hơn ${descOf(c.y)}.`;
+    case "notBoth": { const [A]=subj(cs,c.s); return `${A} không cầm ${W(c.w)}, cũng chẳng hề tới ${L(c.l)}.`; }
+  }
+  return "?";
+}
+function groupOf(c){
+  if(c.t==="sw"||c.t==="sl"||c.t==="wl") return c.v?"dir1":"dir0";
+  if(c.t.endsWith("2")) return "or";
+  if(c.t.includes("Attr")) return "attr";
+  return c.t==="taller" ? "tall" : "nb";
+}
+function catOf(c){
+  if(["sw","sw2","sAttrW","wAttrS"].includes(c.t)) return "SW";
+  if(["sl","sl2","sAttrL","lAttrS"].includes(c.t)) return "SL";
+  if(["wl","wl2","wAttrL","lAttrW"].includes(c.t)) return "WL";
+  if(c.t==="taller"){ const k=[c.x.k,c.y.k]; if(!k.includes("l")) return "SW"; if(!k.includes("w")) return "SL"; }
+  return "MIX";
+}
+function quota(g,n,K){
+  return {dir1:n<=3?1:2, dir0:Math.ceil(K*.3), or:Math.ceil(K*.25), attr:Math.ceil(K*.4), tall:Math.ceil(K*.2), nb:Math.ceil(K*.15)}[g];
+}
+// Mọi manh mối ĐÚNG với lời giải.
+function genCands(cs){
+  const {n,sol}=cs, p=sol.p, q=sol.q, ip=invert(p), iq=invert(q), out=[];
+  const R=range(n);
+  for(const s of R) for(const w of R) out.push({t:"sw",s,w,v:p[s]===w});
+  for(const s of R) for(const l of R) out.push({t:"sl",s,l,v:q[s]===l});
+  for(const w of R) for(const l of R) out.push({t:"wl",w,l,v:q[ip[w]]===l});
+  for(const s of R) for(const w of R) if(w!==p[s]) out.push({t:"sw2",s,a:p[s],b:w});
+  for(const s of R) for(const l of R) if(l!==q[s]) out.push({t:"sl2",s,a:q[s],b:l});
+  for(const w of R) for(const l of R) if(l!==q[ip[w]]) out.push({t:"wl2",w,a:q[ip[w]],b:l});
+  for(const w of R) for(const a of SA) out.push({t:"wAttrS",w,a,val:sAttr(cs,ip[w],a)});
+  for(const l of R) for(const a of SA) out.push({t:"lAttrS",l,a,val:sAttr(cs,iq[l],a)});
+  for(const s of R) for(const a of WA) out.push({t:"sAttrW",s,a,val:wAttr(cs,p[s],a)});
+  for(const l of R) for(const a of WA) out.push({t:"lAttrW",l,a,val:wAttr(cs,p[iq[l]],a)});
+  for(const s of R) out.push({t:"sAttrL",s,val:lAttr(cs,q[s])});
+  for(const w of R) out.push({t:"wAttrL",w,val:lAttr(cs,q[ip[w]])});
+  const D=[...R.map(i=>({k:"s",i})),...R.map(i=>({k:"w",i})),...R.map(i=>({k:"l",i}))];
+  for(const x of D) for(const y of D){
+    if(x.k==="s"&&y.k==="s") continue;                       // so sánh 2 người có tên thì ai cũng tự đọc được
+    const a=who(x,ip,iq), b=who(y,ip,iq);
+    if(cs.sus[a].h>cs.sus[b].h) out.push({t:"taller",x,y});
+  }
+  for(const s of R) for(const w of R) for(const l of R) if(p[s]!==w&&q[s]!==l) out.push({t:"notBoth",s,w,l});
+  return out.map(c=>Object.assign(c,{g:groupOf(c)}));
+}
+
+function genCase(n){
+  n=[3,4,5].includes(n)?n:4;
+  const K=4*n, {list}=perms(n), M=list.length, ALL=range(M*M);
+  for(let attempt=0;;attempt++){
+    const sus=shuffle(range(SUSPECTS.length)).slice(0,n).map(i=>({...SUSPECTS[i]}));
+    const wea=shuffle(range(WEAPONS.length)).slice(0,n).map(i=>({...WEAPONS[i]}));
+    const loc=shuffle(range(LOCATIONS.length)).slice(0,n).map(i=>({...LOCATIONS[i]}));
+    const sol={p:list[rnd(M)].slice(), q:list[rnd(M)].slice()};
+    const scene=rnd(2)?{k:"l",i:rnd(n)}:{k:"w",i:rnd(n)};
+    sol.m = scene.k==="l" ? sol.q.indexOf(scene.i) : sol.p.indexOf(scene.i);
+    const cs={n,sus,wea,loc,scene,sol};
+    const cands=genCands(cs);
+    cands.forEach(c=>c.f=predOf(c,cs));
+    let alive=ALL; const chosen=[], cnt={};
+    const ok=c=>!c.used&&(cnt[c.g]||0)<quota(c.g,n,K);
+    const take=c=>{ c.used=true; chosen.push(c); cnt[c.g]=(cnt[c.g]||0)+1; };
+    // Chọn dần manh mối sao cho số thế giới giảm đều, tới gần cuối mới còn đúng 1.
+    while(chosen.length<K&&alive.length>1){
+      const rem=K-chosen.length, target=rem<=2?1:Math.pow(alive.length,(rem-2)/(rem-1));
+      const el=shuffle(cands.filter(ok)).slice(0,n>=5?28:40);
+      let best=null, bs=Infinity, bA=null;
+      for(const c of el){
+        const na=filterW(n,alive,c.f);
+        if(na.length===alive.length) continue;
+        const sc=Math.abs(Math.log(na.length)-Math.log(target))+0.3*(cnt[c.g]||0)+Math.random()*0.3;
+        if(sc<bs){ bs=sc; best=c; bA=na; }
+      }
+      if(!best) break;
+      take(best); alive=bA;
+    }
+    if(alive.length!==1) continue;
+    // Thêm manh mối phụ (yếu) cho đủ bộ thẻ: nhiều đường suy luận hơn.
+    const weak=shuffle(cands.filter(c=>!c.used)).map(c=>({c,k:filterW(n,ALL,c.f).length/ALL.length})).filter(o=>o.k<1&&o.k>=0.45);
+    for(const o of weak){ if(chosen.length>=K) break; if(ok(o.c)) take(o.c); }
+    for(const o of weak){ if(chosen.length>=K) break; if(!o.c.used) take(o.c); }
+    if(chosen.length<K) continue;
+    // Không thẻ nào được tự mình lộ ngay hung thủ.
+    const solvesAlone=chosen.some(c=>{
+      const ws=filterW(n,ALL,c.f), {list:L,inv:I}=perms(n), key=new Set();
+      for(const wi of ws){ const i=(wi/M)|0, j=wi-i*M, m=murdererOf(scene,I[i],I[j]); key.add(m*100+L[i][m]*10+L[j][m]); if(key.size>1) return false; }
+      return true;
+    });
+    if(solvesAlone&&attempt<50) continue;
+    const cards=shuffle(chosen).map((c,i)=>{ const {f,used,...d}=c; d.f=(i/n)|0; d.k=i%n; d.cat=catOf(c); d.tx=clueText(c,cs); return d; });
+    const venue=pick(VENUES);
+    return { n, sus, wea, loc, scene, sol, cards,
+      id: Date.now().toString(36)+rnd(1e6).toString(36),
+      no: 100+rnd(900), title: pick(TITLES).replace("{v}",venue), victim: pick(VICTIMS) };
+  }
+}
+
+/* ---- trạng thái ván ---- */
+function cleanCfg(c){
+  const n=+(c&&c.n), acc=+(c&&c.acc);
+  return { n:[3,4,5].includes(n)?n:4, acc:[1,2,3].includes(acc)?acc:2, strict: !(c&&(c.strict===false||c.strict===0||c.strict==="0")) };
+}
+function newMatch(names,cfg){
+  const st={names, cfg:cleanCfg(cfg), log:[], moveNo:0, first:rnd(2), score:[0,0], round:0};
+  resetMatch(st); return st;
+}
+function resetMatch(st){
+  const cs=genCase(st.cfg.n), K=cs.cards.length;
+  Object.assign(st,{ cs, seen:[Array(K).fill(false),Array(K).fill(false)], pub:Array(K).fill(false),
+    marks:{}, accs:[], tokens:[st.cfg.acc,st.cfg.acc], phase:"setup", picks:[0,0], turn:st.first, pending:null, result:null, last:null });
+  st.round++;
+  st.log.push({sys:1,t:`Vụ án #${cs.no}: ${cs.title}. Mỗi thám tử chọn 2 thẻ chứng cứ để mở đầu.`});
+  st.moveNo++;
+}
+const cardCode=(cs,i)=>"ABCD"[cs.cards[i].f]+(cs.cards[i].k+1);
+const claimText=(c,v)=> c.t==="sw" ? `{s${c.a}} ${v?"cầm":"không cầm"} {w${c.b}}`
+  : c.t==="sl" ? `{s${c.a}} ${v?"ở":"không ở"} {l${c.b}}` : `{w${c.a}} ${v?"ở":"không ở"} {l${c.b}}`;
+
+function predsFor(st,p){ // p = -1: chỉ thông tin công khai
+  const cs=st.cs, out=[];
+  cs.cards.forEach((c,i)=>{ if(st.pub[i]||(p>=0&&st.seen[p][i])) out.push(predOf(c,cs)); });
+  for(const k in st.marks){ const m=st.marks[k]; out.push(predOf({t:"cell",cell:m.cell,v:!!m.v},cs)); }
+  for(const a of st.accs) out.push(predOf({t:"notTriple",s:a.s,w:a.w,l:a.l},cs));
+  return out;
+}
+function entails(n,preds,cell,v){
+  const {list,inv}=perms(n), M=list.length;
+  for(let i=0;i<M;i++){ const p=list[i], ip=inv[i];
+    for(let j=0;j<M;j++){
+      const q=list[j];
+      if(cellVal(cell,p,q,ip)===v) continue;           // thế giới này đồng ý, không cần xét
+      const iq=inv[j]; let ok=true;
+      for(const f of preds){ if(!f(p,q,ip,iq)){ ok=false; break; } }
+      if(ok) return false;                             // còn thế giới khớp mọi manh mối mà phản bác
+    }
+  }
+  return true;
+}
+function unseenFor(st,p){ return range(st.cs.cards.length).filter(i=>!st.seen[p][i]&&!st.pub[i]); }
+// Còn ô nào người chơi chứng minh được mà thông tin công khai chưa suy ra được không?
+function hasNewFact(st,p){
+  const n=st.cs.n, {list,inv}=perms(n), M=list.length, ALL=range(M*M);
+  const alive=pr=>filterW(n,ALL,(a,b,c,d)=>pr.every(f=>f(a,b,c,d))).map(wi=>{ const i=(wi/M)|0; return [list[i],list[wi-i*M],inv[i]]; });
+  const mine=alive(predsFor(st,p)), pub=alive(predsFor(st,-1));
+  const fixed=(ws,cell)=>{ const v=cellVal(cell,ws[0][0],ws[0][1],ws[0][2]); return ws.every(w=>cellVal(cell,w[0],w[1],w[2])===v); };
+  for(const t of ["sw","sl","wl"]) for(let a=0;a<n;a++) for(let b=0;b<n;b++){
+    const cell={t,a,b};
+    if(!st.marks[cellKey(cell)]&&fixed(mine,cell)&&!fixed(pub,cell)) return true;
+  }
+  return false;
+}
+function endTurn(st){ st.turn=1-st.turn; st.pending=null; st.moveNo++; }
+function finish(st,winner,reason){
+  st.phase="end"; st.pending=null; st.result={winner,reason};
+  if(winner>=0) st.score[winner]++;
+  st.first=1-st.first; st.moveNo++;
+  const cs=st.cs, m=cs.sol.m;
+  st.log.push({sys:1,t:`Sự thật: {s${m}} dùng {w${cs.sol.p[m]}} gây án tại {l${cs.sol.q[m]}}.`});
+}
+function discover(st,p){
+  const u=unseenFor(st,p);
+  if(!u.length){ st.log.push({t:`🃏 ${st.names[p]} rút Thẻ Phát Hiện nhưng không còn thẻ chứng cứ nào để xem.`}); return -1; }
+  const c=pick(u); st.seen[p][c]=true; st.last={k:"card",p,c,how:"disc"};
+  st.log.push({t:`🃏 ${st.names[p]} rút Thẻ Phát Hiện → xem thẻ ${cardCode(st.cs,c)}.`});
+  return c;
+}
+
+function applyAction(st,p,a){
+  if(!a||typeof a!=="object") return "Hành động không hợp lệ.";
+  const cs=st.cs, n=cs.n, K=cs.cards.length, N=st.names[p];
+  const vi=x=>Number.isInteger(x)&&x>=0&&x<n, vc=x=>Number.isInteger(x)&&x>=0&&x<K;
+  if(a.k==="rematch"){
+    if(st.phase!=="end") return "Ván chưa kết thúc.";
+    if(p===0&&a.cfg) st.cfg=cleanCfg(a.cfg);
+    st.turn=st.first; st.log.push({sys:1,t:"— Vụ án mới —"}); resetMatch(st); return null;
+  }
+  if(st.phase==="end") return "Ván đã kết thúc.";
+  if(a.k==="resign"){ st.log.push({t:`🏳️ ${N} đầu hàng.`}); finish(st,1-p,"resign"); return null; }
+
+  if(st.phase==="setup"){
+    if(a.k!=="peek") return "Hãy chọn 2 thẻ chứng cứ để mở đầu.";
+    if(st.picks[p]>=2) return "Bạn đã chọn đủ 2 thẻ, chờ đối thủ nhé.";
+    if(!vc(a.c)||st.seen[p][a.c]) return "Thẻ không hợp lệ.";
+    st.seen[p][a.c]=true; st.picks[p]++; st.last={k:"card",p,c:a.c,how:"setup"};
+    st.log.push({t:`📂 ${N} mở thẻ ${cardCode(cs,a.c)}.`});
+    if(st.picks[0]>=2&&st.picks[1]>=2){ st.phase="play"; st.log.push({sys:1,t:`Bắt đầu điều tra! ${st.names[st.turn]} đi trước.`}); }
+    st.moveNo++; return null;
+  }
+  if(st.pending){
+    if(p!==st.pending.p) return `Chờ ${st.names[st.pending.p]} chọn thẻ.`;
+    if(a.k!=="pick") return "Hãy chọn 1 thẻ chưa xem để mở.";
+    if(!vc(a.c)||st.seen[p][a.c]||st.pub[a.c]) return "Hãy chọn thẻ bạn chưa xem.";
+    st.seen[p][a.c]=true; st.last={k:"card",p,c:a.c,how:"pick"};
+    st.log.push({t:`📂 ${N} chọn xem thẻ ${cardCode(cs,a.c)}.`});
+    endTurn(st); return null;
+  }
+  if(p!==st.turn) return "Chưa tới lượt bạn.";
+
+  if(a.k==="share"){
+    const c=a.cell, v=a.v===1?1:a.v===0?0:-1;
+    if(!c||!["sw","sl","wl"].includes(c.t)||!vi(c.a)||!vi(c.b)||v<0) return "Ô không hợp lệ.";
+    const cell={t:c.t,a:c.a,b:c.b}, key=cellKey(cell);
+    if(st.marks[key]) return "Ô này đã có trên bảng chung.";
+    if(!entails(n,predsFor(st,p),cell,!!v)){
+      if(st.cfg.strict){
+        st.log.push({t:`⚠️ ${N} định chia sẻ một điều chưa có căn cứ → mất lượt.`}); st.last={k:"bad",p};
+        endTurn(st); return "❌ Bạn chưa đủ căn cứ để khẳng định điều đó — mất lượt!";
+      }
+      return "❌ Bạn chưa đủ căn cứ để khẳng định điều đó. Hãy suy luận thêm.";
+    }
+    if(entails(n,predsFor(st,-1),cell,!!v)) return "Điều này đã suy ra được từ thông tin công khai — hãy chia sẻ điều mới.";
+    st.marks[key]={cell,v,by:p};
+    st.log.push({t:`📢 ${N} chia sẻ ${v?"✓":"✗"}: ${claimText(cell,v)}.`});
+    st.last={k:"mark",p,key};
+    if(v){
+      if(unseenFor(st,p).length){ st.pending={p,k:"pick"}; st.moveNo++; return null; }
+      st.log.push({t:`(${N} đã xem hết thẻ chứng cứ.)`});
+    } else st.last={k:"mark",p,key,d:discover(st,p)};
+    endTurn(st); return null;
+  }
+  if(a.k==="reveal"){
+    if(!vc(a.c)) return "Thẻ không hợp lệ.";
+    if(!st.seen[p][a.c]) return "Bạn chỉ công khai được thẻ mình đã xem.";
+    if(st.pub[a.c]||st.seen[1-p][a.c]) return "Đối thủ đã biết thẻ này rồi — hãy chọn thẻ khác.";
+    st.pub[a.c]=true;
+    st.log.push({t:`📢 ${N} công khai thẻ ${cardCode(cs,a.c)}.`});
+    st.last={k:"reveal",p,c:a.c,d:discover(st,p)};
+    endTurn(st); return null;
+  }
+  if(a.k==="accuse"){
+    if(!vi(a.s)||!vi(a.w)||!vi(a.l)) return "Lời buộc tội không hợp lệ.";
+    if(st.tokens[p]<=0) return "Bạn đã hết lượt buộc tội.";
+    st.tokens[p]--;
+    const sol=cs.sol, m=sol.m, txt=`{s${a.s}} dùng {w${a.w}} tại {l${a.l}}`;
+    if(a.s===m&&a.w===sol.p[m]&&a.l===sol.q[m]){
+      st.log.push({sys:1,t:`⚖️ ${N} buộc tội: ${txt} — CHÍNH XÁC!`}); st.last={k:"acc",p,ok:true};
+      finish(st,p,"solve"); return null;
+    }
+    st.accs.push({p,s:a.s,w:a.w,l:a.l}); st.last={k:"acc",p,ok:false};
+    st.log.push({t:`⚖️ ${N} buộc tội: ${txt} — SAI!`});
+    if(st.tokens[p]<=0){ finish(st,1-p,"noTokens"); return null; }
+    endTurn(st); return null;
+  }
+  if(a.k==="investigate"){
+    if(!unseenFor(st,p).length) return "Bạn đã biết hết thẻ chứng cứ — đủ dữ kiện để buộc tội rồi!";
+    if(range(K).some(c=>st.seen[p][c]&&!st.pub[c]&&!st.seen[1-p][c])) return "Bạn vẫn còn thẻ có thể công khai — hãy dùng 📂 Công khai 1 thẻ.";
+    if(hasNewFact(st,p)) return "Bạn vẫn còn ít nhất một ô chứng minh được mà bảng chung chưa có — hãy suy luận và chia sẻ nó.";
+    st.log.push({t:`🔦 ${N} bí manh mối, điều tra thêm.`});
+    discover(st,p); endTurn(st); return null;
+  }
+  if(a.k==="pass"){ st.log.push({t:`⏭️ ${N} bỏ lượt.`}); st.last={k:"pass",p}; endTurn(st); return null; }
+  return "Hành động không hợp lệ.";
+}
+
+function viewFor(st,p){
+  const cs=st.cs, end=st.phase==="end";
+  return {
+    me:p, names:st.names, cfg:st.cfg, phase:st.phase, turn:st.turn, pending:st.pending, picks:st.picks,
+    tokens:st.tokens, score:st.score, round:st.round,
+    cs:{id:cs.id, no:cs.no, title:cs.title, victim:cs.victim, n:cs.n, sus:cs.sus, wea:cs.wea, loc:cs.loc, scene:cs.scene},
+    cards:cs.cards.map((c,i)=>({f:c.f, k:c.k, cat:c.cat, seen:[st.seen[0][i],st.seen[1][i]], pub:st.pub[i],
+      tx:(end||st.seen[p][i]||st.pub[i])?c.tx:null})),
+    marks:st.marks, accs:st.accs,
+    log:st.log.filter(l=>l.to===undefined||l.to===p).slice(-80),
+    last:st.last, moveNo:st.moveNo, result:st.result,
+    sol:end?{p:cs.sol.p, q:cs.sol.q, m:cs.sol.m}:null
+  };
+}
+/* ==ENGINE END== */
+
+/* ================= NETWORK ================= */
+const PREFIX="murdle-vh-";
+let peer=null, conn=null, guestConn=null, isHost=false, myName="", guestName="", roomCode="", state=null, view=null, joinTimer=null, hostCfg=null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(t,html){ const el=$("toast"); if(html) el.innerHTML=t; else el.textContent=t; el.classList.add("show"); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("show"),3000); }
+function lobbyMsg(t){ $("lobbyMsg").textContent=t||""; }
+function genCode(){ const A="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; const r=new Uint32Array(5); crypto.getRandomValues(r); for(const x of r) s+=A[x%A.length]; return s; }
+function roomLink(){ return location.origin+location.pathname+"?room="+roomCode; }
+function getName(){
+  const n=$("nameInput").value.trim();
+  if(!n){ lobbyMsg("Nhập tên thám tử trước đã nhé 🕵️"); $("nameInput").focus(); return null; }
+  try{ localStorage.setItem("murdle-name",n); }catch(e){}
+  return n;
+}
+function lockLobby(b){ $("createBtn").disabled=b; $("joinBtn").disabled=b; }
+function readCfg(nS,aS,sS){ return cleanCfg({n:+$(nS).value, acc:+$(aS).value, strict:$(sS).value}); }
+
+function createRoom(){
+  const n=getName(); if(!n) return;
+  if(typeof Peer==="undefined"){ lobbyMsg("Không tải được thư viện kết nối, kiểm tra mạng."); return; }
+  hostCfg=readCfg("nSel","accSel","strictSel");
+  try{ localStorage.setItem("murdle-cfg",JSON.stringify(hostCfg)); }catch(e){}
+  myName=n; isHost=true; lockLobby(true); lobbyMsg("");
+  roomCode=genCode();
+  peer=new Peer(PREFIX+roomCode);
+  peer.on("open",()=>{
+    $("lobbyMain").classList.add("hidden"); $("lobbyWait").classList.remove("hidden");
+    $("waitCode").textContent=roomCode; $("waitLink").textContent=roomLink();
+    history.replaceState(null,"","?room="+roomCode+"&host=1");
+  });
+  peer.on("connection", onGuestConn);
+  peer.on("disconnected",()=>{ if(!peer.destroyed) peer.reconnect(); });
+  peer.on("error",e=>{
+    if(e.type==="unavailable-id"){ peer.destroy(); isHost=false; createRoom(); return; }
+    if(e.type==="peer-unavailable") return;
+    console.warn(e); toast("Lỗi kết nối: "+e.type); lockLobby(false);
+  });
+}
+function onGuestConn(c){
+  c.on("data", msg=>{
+    if(!msg||typeof msg!=="object") return;
+    if(msg.t==="hello"){
+      if(guestConn && guestConn!==c && guestConn.open){ c.send({t:"full"}); setTimeout(()=>c.close(),300); return; }
+      guestConn=c; guestName=String(msg.name||"Khách").slice(0,16);
+      if(!state){ state=newMatch([myName,guestName],hostCfg); startGameUI(); }
+      else { state.names[1]=guestName; state.log.push({t:`${guestName} đã vào lại phòng.`}); }
+      broadcast();
+    } else if(msg.t==="act" && c===guestConn){
+      const err=applyAction(state,1,msg.a||{});
+      if(err) c.send({t:"err",msg:err});
+      broadcast();
+    }
+  });
+  c.on("close",()=>{ if(c===guestConn){ guestConn=null; if(state){ state.log.push({t:`${guestName} mất kết nối…`}); broadcast(); } } });
+}
+function broadcast(){
+  onView(viewFor(state,0));
+  if(guestConn && guestConn.open) guestConn.send({t:"state", view:viewFor(state,1)});
+}
+function joinRoom(){
+  const n=getName(); if(!n) return;
+  const code=$("codeInput").value.trim().toUpperCase();
+  if(code.length!==5){ lobbyMsg("Mã phòng gồm 5 ký tự."); return; }
+  if(typeof Peer==="undefined"){ lobbyMsg("Không tải được thư viện kết nối, kiểm tra mạng."); return; }
+  myName=n; roomCode=code; isHost=false; lockLobby(true); lobbyMsg("Đang kết nối…");
+  $("lobbyMsg").style.color="var(--muted)";
+  if(peer) peer.destroy();
+  peer=new Peer();
+  peer.on("open",()=>connectToHost());
+  peer.on("error",e=>{
+    $("lobbyMsg").style.color="";
+    if(e.type==="peer-unavailable"){ clearTimeout(joinTimer); if(!view){ lobbyMsg("Không tìm thấy phòng "+roomCode+". Kiểm tra lại mã."); lockLobby(false); } else showDisconnected(); }
+    else { console.warn(e); lobbyMsg("Lỗi kết nối: "+e.type); lockLobby(false); }
+  });
+  peer.on("disconnected",()=>{ if(!peer.destroyed) peer.reconnect(); });
+}
+function connectToHost(){
+  conn=peer.connect(PREFIX+roomCode,{reliable:true});
+  clearTimeout(joinTimer);
+  joinTimer=setTimeout(()=>{ if(!view){ lobbyMsg("Kết nối quá lâu. Chủ phòng còn mở tab không?"); lockLobby(false); } },15000);
+  conn.on("open",()=>{ conn.send({t:"hello",name:myName}); });
+  conn.on("data",msg=>{
+    if(!msg) return;
+    if(msg.t==="state"){ clearTimeout(joinTimer); if($("game").classList.contains("hidden")) startGameUI(); if(overlayId==="dc") closeOverlay(); onView(msg.view); }
+    else if(msg.t==="err") toast(msg.msg);
+    else if(msg.t==="full"){ lobbyMsg("Phòng đã đủ 2 người."); lockLobby(false); }
+  });
+  conn.on("close",()=>{ if(view) showDisconnected(); });
+}
+function showDisconnected(){
+  openOverlay(`<h2>Mất kết nối</h2><p class="tag" style="text-align:center">Không liên lạc được với chủ phòng.</p>
+    <div class="row"><button class="btn red" id="rejoinBtn">Kết nối lại</button></div>`, "dc");
+  $("rejoinBtn").onclick=()=>{ $("rejoinBtn").disabled=true; $("rejoinBtn").textContent="Đang thử…"; connectToHost(); };
+}
+function sendAction(a){
+  if(isHost){ const err=applyAction(state,0,a); if(err) toast(err); broadcast(); }
+  else if(conn && conn.open) conn.send({t:"act",a});
+  else toast("Chưa kết nối với chủ phòng.");
+}
+
+/* ================= UI ================= */
+let overlayId=null;
+function openOverlay(html,id){ $("modal").innerHTML=html; $("overlay").classList.remove("hidden"); overlayId=id; }
+function closeOverlay(){ $("overlay").classList.add("hidden"); overlayId=null; if(newQueue.length) setTimeout(showNewCards,60); }
+$("overlay").addEventListener("click",e=>{ if(e.target.id==="overlay" && ["rules","resign","accuse","cards","end"].includes(overlayId)) closeOverlay(); });
+
+function startGameUI(){
+  $("lobby").classList.add("hidden"); $("game").classList.remove("hidden");
+  $("roomInfo").innerHTML = `Phòng <b>${roomCode}</b>`;
+  if(!isHost && roomCode) history.replaceState(null,"","?room="+roomCode);
+}
+
+// ---- âm thanh ----
+let actx=null;
+function beep(seq){
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    let t=actx.currentTime+0.01;
+    for(const [f,d,type] of seq){
+      const o=actx.createOscillator(), g=actx.createGain();
+      o.type=type||"sine"; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.15,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+d+0.02); t+=d*0.85;
+    }
+  }catch(e){}
+}
+const SND={ mark:[[520,.08],[700,.12]], card:[[880,.07],[1175,.12]], bad:[[260,.18,"triangle"],[196,.26,"triangle"]],
+  wrong:[[220,.25,"sawtooth"],[165,.4,"sawtooth"]], win:[[523,.12],[659,.12],[784,.12],[1047,.32]], lose:[[392,.2,"triangle"],[311,.25,"triangle"],[262,.4,"triangle"]], turn:[[660,.08],[880,.1]] };
+
+// ---- trạng thái cục bộ ----
+let mode=null, selCell=null, selCard=null, notes={}, notesId="", autoX=true, prevLast="", fxKey=null, knownTx=new Set(), knownCid="", newQueue=[], freshCards=new Set();
+try{ autoX=localStorage.getItem("murdle-autox")!=="0"; }catch(e){}
+$("autoX").checked=autoX;
+
+const SEATC=["var(--p0)","var(--p1)"];
+const opp = v => v.names[1-v.me];
+const codeOf = c => "ABCD"[c.f]+(c.k+1);
+const ATTR = {
+  s:o=>`📏 ${Math.floor(o.h/100)}m${String(o.h%100).padStart(2,"0")} · ✋ tay ${o.hand} · 👁️ mắt ${o.eye}`,
+  w:o=>`⚖️ ${o.wt==="vừa"?"nặng vừa":o.wt} · 🧱 ${o.mat}`,
+  l:o=>`${o.io==="trong nhà"?"🏠":"🌳"} ${o.io}`
+};
+const objOf=(k,i)=> k==="s"?view.cs.sus[i] : k==="w"?view.cs.wea[i] : view.cs.loc[i];
+function chip(k,i){
+  const o=objOf(k,i); if(!o) return "?";
+  return `<span class="chip ${k}" ${k==="s"?`style="--c:${o.c}"`:""} title="${esc(ATTR[k](o))}">${o.e} ${esc(o.n)}</span>`;
+}
+const rich = tx => esc(tx).replace(/\{([swl])(\d)\}/g,(m,k,i)=>chip(k,+i));
+const parseKey = k => ({t:k.slice(0,2), a:+k[2], b:+k[3]});
+const myTurn = v => v.phase==="play" && (v.pending ? v.pending.p===v.me : v.turn===v.me);
+
+function implied(v){ // ✗ hiển nhiên từ các ✓ trên bảng chung (cùng hàng / cùng cột trong một ô lớn)
+  const s=new Set(), n=v.cs.n;
+  for(const k in v.marks){ const m=v.marks[k]; if(!m.v) continue; const c=m.cell;
+    for(let x=0;x<n;x++){ if(x!==c.b) s.add(c.t+c.a+x); if(x!==c.a) s.add(c.t+x+c.b); } }
+  for(const k in v.marks) s.delete(k);
+  return s;
+}
+
+function loadNotes(cid){
+  if(notesId===cid) return;
+  notesId=cid; notes={};
+  try{
+    const raw=localStorage.getItem("murdle-notes-"+cid); if(raw) notes=JSON.parse(raw)||{};
+    for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k&&k.startsWith("murdle-notes-")&&k!=="murdle-notes-"+cid) localStorage.removeItem(k); }
+  }catch(e){}
+}
+function saveNotes(){ try{ localStorage.setItem("murdle-notes-"+notesId,JSON.stringify(notes)); }catch(e){} }
+
+function onView(v){
+  const prev=view; view=v;
+  loadNotes(v.cs.id);
+  const newCase = knownCid!==v.cs.id;
+  if(newCase){ knownCid=v.cs.id; knownTx=new Set(); mode=null; selCell=null; selCard=null; newQueue=[]; freshCards=new Set(); }
+  // thẻ mới hiện ra với mình
+  const fresh=[];
+  v.cards.forEach((c,i)=>{ if(c.tx!==null&&!knownTx.has(i)){ knownTx.add(i); if(!newCase&&v.phase!=="end") fresh.push(i); } });
+  if(newCase) v.cards.forEach((c,i)=>{ if(c.tx!==null) knownTx.add(i); });
+  freshCards=new Set(fresh);
+  if(!prev||prev.moveNo!==v.moveNo){ if(!myTurn(v)||!prev||prev.turn!==v.turn||prev.phase!==v.phase){ mode=null; selCell=null; selCard=null; } }
+  // hiệu ứng nước đi vừa rồi
+  const lk=v.last?JSON.stringify(v.last)+"|"+v.moveNo:"";
+  fxKey=null;
+  if(lk&&lk!==prevLast&&prev&&!newCase){
+    const L=v.last;
+    if(L.k==="mark"){ fxKey=L.key; beep(SND.mark); if(L.p!==v.me){ const m=v.marks[L.key]; toast(`📢 ${esc(opp(v))} chia sẻ ${m.v?"✓":"✗"}: ${rich(claimText(m.cell,m.v))}`,true); } }
+    else if(L.k==="bad") beep(SND.bad);
+    else if(L.k==="acc"&&!L.ok){ beep(SND.wrong); if(L.p!==v.me) toast(`⚖️ ${opp(v)} buộc tội SAI!`); }
+    else if(L.k==="card"||L.k==="reveal") beep(SND.card);
+  }
+  prevLast=lk;
+  if(fresh.length){ newQueue.push(...fresh.map(i=>({i,last:v.last}))); if(!overlayId) showNewCards(); }
+  if(prev&&prev.phase==="play"&&v.phase==="play"&&!myTurn(prev)&&myTurn(v)&&!fresh.length) beep(SND.turn);
+  render();
+  if(v.phase==="end"){
+    if(!prev||prev.phase!=="end"){ beep(v.result.winner===v.me?SND.win:SND.lose); setTimeout(()=>{ if(view.phase==="end") showEnd(); },700); }
+  } else if(overlayId==="end") closeOverlay();
+  document.title = myTurn(v) ? "● Lượt bạn · Murdle" : "Murdle · Thám Tử Đấu Trí";
+}
+
+function render(){
+  const v=view, tc=$("turnChip");
+  let t="", me=false;
+  if(v.phase==="end") t="Kết thúc";
+  else if(v.phase==="setup") { t = v.picks[v.me]<2 ? "Chọn 2 thẻ mở đầu" : `Chờ ${opp(v)} chọn thẻ`; me=v.picks[v.me]<2; }
+  else if(myTurn(v)){ t = v.pending ? "Chọn thẻ để xem" : "Lượt bạn"; me=true; }
+  else t=`Lượt ${opp(v)}`;
+  tc.textContent=t; tc.className="turnChip"+(me?" me":"");
+  $("resignBtn").disabled = v.phase==="end";
+  renderCase(); renderStatus(); renderActions(); renderGrid(); renderRoster(); renderPlayers(); renderClues(); renderFolders();
+  $("log").innerHTML = v.log.slice().reverse().map(l=>`<div class="${l.sys?"sys":l.to!==undefined?"pv":""}">${rich(l.t)}</div>`).join("");
+}
+
+function sceneText(v){
+  const sc=v.cs.scene;
+  return sc.k==="l"
+    ? `Thi thể được tìm thấy ở ${chip("l",sc.i)}. Hung thủ là <b>người đã ở ${chip("l",sc.i)}</b>, và hung khí là thứ người đó mang theo.`
+    : `Nạn nhân bị sát hại bằng ${chip("w",sc.i)}. Hung thủ là <b>người cầm ${chip("w",sc.i)}</b>, và án mạng xảy ra ở nơi người đó có mặt.`;
+}
+function renderCase(){
+  const v=view, n=v.cs.n;
+  $("casePanel").innerHTML=`<div class="caseno">Hồ sơ vụ án #${v.cs.no}</div><h2>${esc(v.cs.title)}</h2>
+    <div class="scene">⚰️ <b>${esc(v.cs.victim)}</b> đã chết. ${sceneText(v)}</div>
+    <div class="small">${n} nghi phạm · ${n} hung khí · ${n} địa điểm. Mỗi nghi phạm cầm đúng 1 hung khí và ở đúng 1 địa điểm, không ai trùng ai.</div>`;
+}
+
+function renderStatus(){
+  const v=view, el=$("status"), O=esc(opp(v));
+  let h="";
+  if(v.phase==="end"){
+    const r=v.result, w=r.winner===v.me;
+    h = r.reason==="solve" ? (w?"🏆 <b>Bạn đã phá án!</b>":`😵 <b>${O}</b> đã phá án trước bạn.`)
+      : r.reason==="noTokens" ? (w?`🏆 <b>${O}</b> hết lượt buộc tội — bạn thắng!`:"😵 Bạn đã hết lượt buộc tội — thua ván này.")
+      : (w?`🏳️ <b>${O}</b> đầu hàng — bạn thắng!`:"🏳️ Bạn đã đầu hàng.");
+    h=`<span class="tx">${h} Ô có <b>viền vàng đứt</b> trên lưới là lời giải.</span>`;
+  } else if(v.phase==="setup"){
+    h = v.picks[v.me]<2
+      ? `<span class="tx">🗂️ <b>Mở đầu:</b> chọn <b>${2-v.picks[v.me]} thẻ chứng cứ</b> bất kỳ để xem riêng. Mặt sau thẻ cho biết loại manh mối.</span>`
+      : `<span class="tx">⌛ Chờ <b>${O}</b> chọn thẻ mở đầu<span class="dots"></span></span>`;
+  } else if(v.pending){
+    h = v.pending.p===v.me
+      ? `<span class="tx">✅ Đã ghi nhận ✓! Phần thưởng: <b>tự chọn 1 thẻ chưa xem</b> để mở.</span>`
+      : `<span class="tx">⌛ <b>${O}</b> đang chọn thẻ để xem<span class="dots"></span></span>`;
+  } else if(v.turn===v.me){
+    h = mode==="share" ? `<span class="tx">📢 <b>Chia sẻ:</b> chạm <b>1 ô</b> trên lưới mà bạn <b>chứng minh được</b> là ✓ hoặc ✗ (và bảng chung chưa suy ra được).</span>`
+      : mode==="reveal" ? `<span class="tx">📂 <b>Công khai thẻ:</b> chọn 1 thẻ bạn đã xem mà ${O} chưa xem. Cả hai sẽ cùng thấy thẻ đó.</span>`
+      : `<span class="tx">🎯 <b>Lượt bạn.</b> Chia sẻ một thông tin để được xem thêm chứng cứ — hoặc buộc tội nếu đã chắc chắn.</span>`;
+  } else h=`<span class="tx">⌛ <b>${O}</b> đang suy luận<span class="dots"></span></span>`;
+  el.innerHTML=h;
+  el.classList.toggle("me", v.phase!=="end" && (myTurn(v)||(v.phase==="setup"&&v.picks[v.me]<2)));
+  const last=v.log.filter(l=>!l.sys).slice(-1)[0];
+  $("lastline").innerHTML = last&&v.phase!=="setup" ? "Vừa rồi: "+rich(last.t) : "";
+}
+
+function tileHTML(v,i,pickable,cls){
+  const c=v.cards[i], mine=c.tx!==null, F=FOLDERS[c.f], cat=CATS[c.cat];
+  const eyes=[0,1].filter(p=>c.seen[p]).map(p=>`<i class="eye" style="background:${SEATC[p]}" title="${p===v.me?"Bạn":esc(v.names[p])} đã xem"></i>`).join("");
+  return `<button class="tile ${mine?"mine":"back"} ${pickable?"pick":""} ${cls||""}" data-c="${i}" ${pickable?"":"tabindex=\"-1\""} title="Thẻ ${codeOf(c)} · ${F.n} · ${cat.n}">
+    ${c.pub?`<span class="pb">📢</span>`:""}<span class="eyes">${eyes}</span>
+    <span class="code">${codeOf(c)}</span><span class="cat">${cat.e}</span><span class="cn">${cat.n}</span></button>`;
+}
+function foldersHTML(v,canPick,cls){
+  const n=v.cs.n;
+  return FOLDERS.map((F,f)=>`<div class="folder"><div class="fh">${F.e} ${F.n}</div><div class="tiles">${
+    range(n).map(k=>{ const i=f*n+k; return tileHTML(v,i,canPick(i),cls&&cls(i)); }).join("")}</div></div>`).join("");
+}
+const unseenMine = (v,i) => v.cards[i].tx===null;
+const revealable = (v,i) => { const c=v.cards[i]; return c.seen[v.me]&&!c.pub&&!c.seen[1-v.me]; };
+
+function renderActions(){
+  const v=view, el=$("actions"), O=esc(opp(v));
+  let h="";
+  if(v.phase==="end"){
+    h=`<button class="btn red" id="againBtn">🔎 Vụ án mới</button><button class="btn ghost" id="resBtn">Xem đáp án</button>`;
+  } else if(v.phase==="setup"&&v.picks[v.me]<2){
+    h=`<div class="pickArea"><div class="folders">${foldersHTML(v,i=>unseenMine(v,i))}</div></div>`;
+  } else if(v.pending&&v.pending.p===v.me){
+    h=`<div class="pickArea"><div class="folders">${foldersHTML(v,i=>unseenMine(v,i))}</div></div>`;
+  } else if(v.phase==="play"&&v.turn===v.me&&!v.pending){
+    if(mode==="share"&&selCell){
+      const c=parseKey(selCell), nt=notes[selCell]||0;
+      const strict=v.cfg.strict?" Nếu chưa đủ căn cứ, bạn <b>mất lượt</b>.":"";
+      h=`<div class="confirm"><div class="q">Bạn khẳng định điều gì về ô này?<div class="small">Máy sẽ kiểm tra bạn đã chứng minh được hay chưa.${strict}</div></div>
+        <button class="btn yes" id="shY" ${nt===1?"style='opacity:.8'":""}><span>✓ ${rich(claimText(c,1))}</span><small>Thưởng: tự chọn 1 thẻ chưa xem</small></button>
+        <button class="btn red" id="shN" ${nt===2?"style='opacity:.8'":""}><span>✗ ${rich(claimText(c,0))}</span><small>Thưởng: rút Thẻ Phát Hiện (1 thẻ ngẫu nhiên)</small></button>
+        <button class="btn ghost" id="shC">Chọn ô khác</button></div>`;
+    } else if(mode==="share"){
+      h=`<button class="btn ghost" id="cancelMode">Huỷ chia sẻ</button>`;
+    } else if(mode==="reveal"){
+      h=`<div class="pickArea"><div class="folders">${foldersHTML(v,i=>revealable(v,i),i=>selCard===i?"chosen":"")}</div></div>
+        ${selCard!==null?`<button class="btn blue" id="revGo">📢 Công khai thẻ ${codeOf(v.cards[selCard])}</button>`:""}
+        <button class="btn ghost" id="cancelMode">Huỷ</button>`;
+    } else {
+      const canRev=v.cards.some((c,i)=>revealable(v,i)), left=v.cards.filter(c=>c.tx===null).length;
+      h=`<button class="btn blue" id="aShare">📢 Chia sẻ 1 ô</button>
+        <button class="btn" id="aReveal" ${canRev?"":"disabled"} title="${canRev?"":`Không còn thẻ nào bạn đã xem mà ${O} chưa xem`}">📂 Công khai 1 thẻ</button>
+        <button class="btn red" id="aAccuse">⚖️ Buộc tội (${v.tokens[v.me]})</button>
+        <button class="btn ghost" id="aInv" ${left?"":"disabled"} title="Chỉ dùng được khi bạn không còn gì để chia sẻ hay công khai">🔦 Bí — điều tra thêm</button>
+        <button class="btn ghost" id="aPass">Bỏ lượt</button>
+        <div class="hint">Chia sẻ ✓ → tự chọn thẻ · chia sẻ ✗ hoặc công khai thẻ → Thẻ Phát Hiện ngẫu nhiên. ${left?`Còn ${left} thẻ bạn chưa xem.`:"Bạn đã biết hết thẻ — đủ dữ kiện để buộc tội!"}</div>`;
+    }
+  }
+  el.innerHTML=h;
+  const on=(id,f)=>{ const b=$(id); if(b) b.onclick=f; };
+  on("againBtn",showEnd); on("resBtn",showEnd);
+  on("aShare",()=>{ mode="share"; selCell=null; render(); $("grid").scrollIntoView({behavior:"smooth",block:"nearest"}); });
+  on("aReveal",()=>{ mode="reveal"; selCard=null; render(); });
+  on("aAccuse",showAccuse);
+  on("aInv",()=>sendAction({k:"investigate"}));
+  on("aPass",()=>{ if(confirm("Bỏ lượt này?")) sendAction({k:"pass"}); });
+  on("cancelMode",()=>{ mode=null; selCell=null; selCard=null; render(); });
+  on("shC",()=>{ selCell=null; render(); });
+  on("shY",()=>{ const c=parseKey(selCell); mode=null; selCell=null; sendAction({k:"share",cell:c,v:1}); });
+  on("shN",()=>{ const c=parseKey(selCell); mode=null; selCell=null; sendAction({k:"share",cell:c,v:0}); });
+  on("revGo",()=>{ const c=selCard; mode=null; selCard=null; sendAction({k:"reveal",c}); });
+  el.querySelectorAll(".tile.pick").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.c;
+    if(v.phase==="setup") sendAction({k:"peek",c:i});
+    else if(v.pending) sendAction({k:"pick",c:i});
+    else if(mode==="reveal"){ selCard=i; render(); }
+  });
+}
+
+function renderGrid(){
+  const v=view, n=v.cs.n, cs=v.cs, imp=implied(v), share=mode==="share"&&myTurn(v)&&!v.pending;
+  const sol=v.sol, solSet=new Set();
+  if(sol){ for(let s=0;s<n;s++){ solSet.add("sw"+s+sol.p[s]); solSet.add("sl"+s+sol.q[s]); solSet.add("wl"+sol.p[s]+sol.q[s]); } }
+  const t=$("grid");
+  t.className=`mg n${n}${share?" sharing":""}`;
+  $("gridMode").textContent = share ? "Chế độ chia sẻ: chạm 1 ô" : "Chạm ô để ghi chú riêng";
+  const cell=(k,cls)=>{
+    const m=v.marks[k], nt=notes[k]||0, c=[ "c", cls ];
+    let inner="";
+    if(m){ c.push("pubc"); inner=`<span class="tk ${m.v?"y":"n"}">${m.v?"✓":"✗"}<i class="by" style="background:${SEATC[m.by]}"></i></span>`; }
+    else if(imp.has(k)){ c.push("impc"); inner=nt===2?`<span class="nt y">✓</span>`:`<span class="im">✗</span>`; }
+    else { c.push("open"); if(nt) inner=`<span class="nt ${nt===2?"y":"n"}">${nt===2?"✓":"✗"}</span>`; }
+    if(selCell===k) c.push("sel");
+    if(fxKey===k) c.push("fx");
+    if(solSet.has(k)) c.push("sol");
+    return `<td class="${c.join(" ")}" data-k="${k}">${inner}</td>`;
+  };
+  const colH=(k,o)=>`<th class="ch" title="${esc(o.n)}"><div class="hd"><span class="nm">${esc(o.n)}</span><span class="em">${o.e}</span></div></th>`;
+  const rowH=(k,o)=>`<th class="rh" title="${esc(o.n)} — ${esc(ATTR[k](o))}"><div class="rr">${k==="s"?`<span class="av" style="--c:${o.c}">${o.e}</span>`:`<span class="em">${o.e}</span>`}<span class="rn">${esc(o.n)}</span></div></th>`;
+  let h=`<thead><tr><th></th><th class="ghd" colspan="${n}">Hung khí</th><th class="ghd" colspan="${n}">Địa điểm</th></tr>
+    <tr><th></th>${cs.wea.map(o=>colH("w",o)).join("")}${cs.loc.map(o=>colH("l",o)).join("")}</tr></thead><tbody>`;
+  for(let s=0;s<n;s++){
+    const tb=(s===0?" bt":"")+(s===n-1?" bb":"");
+    h+=`<tr>${rowH("s",cs.sus[s])}`;
+    for(let w=0;w<n;w++) h+=cell("sw"+s+w,tb+(w===0?" bl":"")+(w===n-1?" br":""));
+    for(let l=0;l<n;l++) h+=cell("sl"+s+l,tb+(l===0?" bl":"")+(l===n-1?" br":""));
+    h+="</tr>";
+  }
+  for(let l=0;l<n;l++){
+    const tb=(l===0?" bt":"")+(l===n-1?" bb":"");
+    h+=`<tr>${rowH("l",cs.loc[l])}`;
+    for(let w=0;w<n;w++) h+=cell("wl"+w+l,tb+(w===0?" bl":"")+(w===n-1?" br":""));
+    h+=`<td class="void" colspan="${n}"></td></tr>`;
+  }
+  t.innerHTML=h+"</tbody>";
+}
+
+function renderRoster(){
+  const cs=view.cs;
+  const col=(title,k,arr)=>`<div><div class="rh2">${title}</div>${arr.map(o=>`<div class="ri">${k==="s"?`<span class="av" style="--c:${o.c}">${o.e}</span>`:`<span class="ic">${o.e}</span>`}
+    <div><b>${esc(o.n)}</b><div class="at">${ATTR[k](o)}</div>${o.bio?`<div class="at"><i>${esc(o.bio)}</i></div>`:""}</div></div>`).join("")}</div>`;
+  $("roster").innerHTML=col("Nghi phạm","s",cs.sus)+col("Hung khí","w",cs.wea)+col("Địa điểm","l",cs.loc);
+}
+
+function renderPlayers(){
+  const v=view;
+  $("roundInfo").textContent=`Ván ${v.round} · tỉ số ${v.score[v.me]}–${v.score[1-v.me]}`;
+  $("players").innerHTML=[v.me,1-v.me].map(p=>{
+    const active = v.phase==="play" && (v.pending?v.pending.p===p:v.turn===p);
+    const seen=v.cards.filter(c=>c.seen[p]||c.pub).length;
+    const role = v.phase==="setup" ? (v.picks[p]>=2?"sẵn sàng":`chọn thẻ ${v.picks[p]}/2`) : active ? "đang đi" : "";
+    return `<div class="pl ${active?"active":""}"><span class="dot" style="background:${SEATC[p]}"></span>
+      <span class="nm">${esc(v.names[p])}${p===v.me?" (bạn)":""}</span>
+      <span class="pill" title="Số thẻ chứng cứ đã biết">👁️ ${seen}/${v.cards.length}</span>
+      <span class="pill" title="Lượt buộc tội còn lại">⚖️ ${v.tokens[p]}</span>
+      ${role?`<span class="pill ${active||(v.phase==="setup"&&v.picks[p]<2)?"on":""}">${role}</span>`:""}</div>`;
+  }).join("");
+}
+
+function renderClues(){
+  const v=view;
+  let h=`<div class="clue scene"><span class="cc">⚰️</span><span class="ct">${sceneText(v)}</span></div>`;
+  const known=v.cards.map((c,i)=>({c,i})).filter(o=>o.c.tx!==null);
+  for(const {c,i} of known){
+    const F=FOLDERS[c.f], other=c.seen[1-v.me];
+    h+=`<div class="clue ${c.pub?"pub":""} ${freshCards.has(i)?"new":""}"><span class="cc" title="${F.n}">${codeOf(c)}</span>
+      <span class="ct">${rich(c.tx)}</span><span class="cm" title="${c.pub?"Đã công khai":other?`${esc(opp(v))} cũng đã xem`:`Chỉ bạn biết`}">${c.pub?"📢":other?`<i class="eye" style="background:${SEATC[1-v.me]};display:inline-block"></i>`:"🔒"}</span></div>`;
+  }
+  for(const a of v.accs) h+=`<div class="clue acc"><span class="cc">❌</span><span class="ct">Không phải ${chip("s",a.s)} dùng ${chip("w",a.w)} tại ${chip("l",a.l)} <span class="small">(${a.p===v.me?"bạn":esc(v.names[a.p])} buộc tội sai)</span></span></div>`;
+  if(!known.length) h+=`<div class="empty">Chưa có thẻ chứng cứ nào. ${v.phase==="setup"?"Hãy chọn 2 thẻ để mở đầu.":""}</div>`;
+  $("clues").innerHTML=h;
+  $("clueCount").textContent=`${known.length}/${v.cards.length} thẻ`;
+}
+function renderFolders(){
+  const v=view;
+  $("folders").innerHTML=foldersHTML(v,()=>false);
+  const left=v.cards.filter(c=>c.tx===null).length;
+  $("deckInfo").textContent = v.phase==="end" ? "" : `bạn còn ${left} thẻ chưa xem`;
+}
+
+// ---- thẻ mới ----
+function showNewCards(){
+  if(!newQueue.length||!view) return;
+  const v=view, items=newQueue.splice(0);
+  const parts=items.map(({i,last})=>{
+    const c=v.cards[i], F=FOLDERS[c.f];
+    let how="🔍 Thẻ chứng cứ";
+    if(c.pub&&!c.seen[v.me]) how=`📢 ${esc(opp(v))} công khai`;
+    else if(last&&((last.how==="disc"&&last.c===i)||last.d===i)) how="🃏 Thẻ Phát Hiện";
+    else if(last&&last.how==="pick"&&last.c===i) how="✅ Thẻ bạn chọn";
+    return `<div class="ncard"><div class="nh">${how} · ${codeOf(c)} · ${F.e} ${F.n}</div>${rich(c.tx)}</div>`;
+  }).join("");
+  openOverlay(`<h2>${items.length>1?"Manh mối mới":"🔎 Manh mối mới"}</h2>${parts}
+    <p class="small" style="text-align:center">Thẻ được lưu ở mục 📓 Manh mối bạn biết.</p>
+    <div class="row"><button class="btn red" id="okCard">Ghi nhận</button></div>`,"cards");
+  $("okCard").onclick=closeOverlay;
+}
+
+// ---- buộc tội ----
+function showAccuse(){
+  const v=view, n=v.cs.n, sc=v.cs.scene;
+  const sel={s:null,w:sc.k==="w"?sc.i:null,l:sc.k==="l"?sc.i:null};
+  // gợi ý sẵn theo ghi chú ✓ của người chơi
+  const draw=()=>{
+    const row=(k,lock)=>range(n).map(i=>`<button class="opt2 ${sel[k]===i?"on":""}" data-k="${k}" data-i="${i}" ${lock?"disabled":""}>${objOf(k,i).e} ${esc(objOf(k,i).n)}</button>`).join("");
+    const ready=sel.s!==null&&sel.w!==null&&sel.l!==null;
+    openOverlay(`<h2>⚖️ Buộc tội</h2>
+      <p class="small" style="text-align:center;margin:0 0 8px">Bạn còn <b>${v.tokens[v.me]}</b> lượt buộc tội.
+        ${v.tokens[v.me]<=1?"<b style='color:var(--red)'>Sai lần này là thua ván!</b>":"Sai thì mất lượt, và lời buộc tội sai được công khai."}</p>
+      <label>Hung thủ</label><div class="accrow">${row("s",false)}</div>
+      <label>Hung khí</label><div class="accrow">${row("w",sc.k==="w")}</div>
+      <label>Địa điểm</label><div class="accrow">${row("l",sc.k==="l")}</div>
+      <p class="small">${sc.k==="l"?"Địa điểm đã biết từ biên bản hiện trường.":"Hung khí đã biết từ biên bản hiện trường."}</p>
+      <div class="accsum">${ready?`${chip("s",sel.s)} đã dùng ${chip("w",sel.w)} gây án tại ${chip("l",sel.l)}`:"Chọn đủ hung thủ, hung khí và địa điểm"}</div>
+      <div class="row"><button class="btn red" id="accGo" ${ready?"":"disabled"}>⚖️ Buộc tội!</button><button class="btn ghost" id="accNo">Thôi</button></div>`,"accuse");
+    $("modal").querySelectorAll(".opt2").forEach(b=>b.onclick=()=>{ sel[b.dataset.k]=+b.dataset.i; draw(); });
+    $("accNo").onclick=closeOverlay;
+    $("accGo").onclick=()=>{ closeOverlay(); sendAction({k:"accuse",s:sel.s,w:sel.w,l:sel.l}); };
+  };
+  // nếu ghi chú đã có ✓ cho ô liên quan thì chọn sẵn
+  if(sc.k==="l"){ for(let s=0;s<n;s++) if(notes["sl"+s+sc.i]===2||(v.marks["sl"+s+sc.i]||{}).v) sel.s=s; }
+  else { for(let s=0;s<n;s++) if(notes["sw"+s+sc.i]===2||(v.marks["sw"+s+sc.i]||{}).v) sel.s=s; }
+  if(sel.s!==null){
+    if(sc.k==="l"){ for(let w=0;w<n;w++) if(notes["sw"+sel.s+w]===2||(v.marks["sw"+sel.s+w]||{}).v) sel.w=w; }
+    else { for(let l=0;l<n;l++) if(notes["sl"+sel.s+l]===2||(v.marks["sl"+sel.s+l]||{}).v) sel.l=l; }
+  }
+  draw();
+}
+
+// ---- kết thúc ----
+function showEnd(){
+  const v=view, r=v.result; if(!r||!v.sol) return;
+  const n=v.cs.n, m=v.sol.m, w=r.winner===v.me, O=esc(opp(v));
+  const head = r.reason==="solve" ? (w?"🏆 Bạn đã phá án!":`😵 ${O} phá án trước!`)
+    : r.reason==="noTokens" ? (w?`🏆 ${O} hết lượt buộc tội`:"😵 Hết lượt buộc tội") : (w?`🏳️ ${O} đầu hàng`:"🏳️ Bạn đã đầu hàng");
+  const rows=range(n).map(s=>`<tr class="${s===m?"m":""}"><td>${chip("s",s)}</td><td>${chip("w",v.sol.p[s])}</td><td>${chip("l",v.sol.q[s])}</td></tr>`).join("");
+  openOverlay(`<h2>${head}</h2>
+    <div class="truth">🔪 Sự thật: ${chip("s",m)} đã dùng ${chip("w",v.sol.p[m])} gây án tại ${chip("l",v.sol.q[m])}.</div>
+    <table class="soltab">${rows}</table>
+    <div class="score"><span>${esc(v.names[v.me])} (bạn): ${v.score[v.me]}</span><span>${O}: ${v.score[1-v.me]}</span></div>
+    ${isHost?`<div class="setgrid">
+        <div><label for="nSel2">Vụ án</label><select id="nSel2"></select></div>
+        <div><label for="accSel2">Lượt buộc tội</label><select id="accSel2"></select></div>
+        <div><label for="strictSel2">Thiếu căn cứ</label><select id="strictSel2"></select></div>
+      </div>`:`<p class="small" style="text-align:center">Chủ phòng chọn cỡ vụ án tiếp theo.</p>`}
+    <div class="row"><button class="btn red" id="againBtn2">🔎 Vụ án mới</button><button class="btn ghost" id="viewBtn">Xem lại bàn</button></div>`,"end");
+  if(isHost) fillSelects("nSel2","accSel2","strictSel2",v.cfg);
+  $("againBtn2").onclick=()=>sendAction(isHost?{k:"rematch",cfg:readCfg("nSel2","accSel2","strictSel2")}:{k:"rematch"});
+  $("viewBtn").onclick=closeOverlay;
+}
+function fillSelects(nS,aS,sS,cfg){
+  $(nS).innerHTML=[[3,"3×3 · dễ"],[4,"4×4 · chuẩn"],[5,"5×5 · khó"]].map(([x,t])=>`<option value="${x}" ${x===cfg.n?"selected":""}>${t}</option>`).join("");
+  $(aS).innerHTML=[1,2,3].map(x=>`<option value="${x}" ${x===cfg.acc?"selected":""}>${x} lần${x===1?" (sai là thua)":""}</option>`).join("");
+  $(sS).innerHTML=`<option value="1" ${cfg.strict?"selected":""}>Mất lượt</option><option value="0" ${cfg.strict?"":"selected"}>Được chọn lại</option>`;
+}
+
+function showRules(){
+  openOverlay(`<h2>Luật chơi Murdle · 2 thám tử</h2><div class="rules">
+    <p>Hai thám tử <b>đấu trí</b> cùng phá một vụ án. Ai buộc tội đúng <b>hung thủ – hung khí – địa điểm</b> trước thì thắng.
+      Phỏng theo <i>Murdle</i> (sách giải đố của G.T. Karber và board game của Endless Games), luật được chuyển thể để chơi online.</p>
+    <h3>Vụ án</h3>
+    <ul>
+      <li>Có 3, 4 hoặc 5 nghi phạm, bằng đó hung khí và địa điểm. Mỗi nghi phạm cầm <b>đúng 1</b> hung khí và ở <b>đúng 1</b> địa điểm, không ai trùng ai.</li>
+      <li><b>Biên bản hiện trường</b> (công khai) cho biết nơi tìm thấy thi thể hoặc hung khí gây án → hung thủ là người ở nơi đó / cầm thứ đó.</li>
+      <li><b>4 hồ sơ chứng cứ</b> (Lời khai, Pháp y, Camera, Mật báo), mỗi hồ sơ có vài thẻ. Mỗi thẻ là một manh mối <b>luôn đúng</b>.
+        Mặt sau thẻ ghi loại manh mối: 👤🗡️ nghi phạm–hung khí, 👤📍 nghi phạm–địa điểm, 🗡️📍 hung khí–địa điểm, 🔀 tổng hợp.</li>
+      <li>Gộp <b>tất cả</b> thẻ thì chỉ còn đúng một lời giải. Không thẻ nào tự mình lộ ngay hung thủ.</li>
+    </ul>
+    <h3>Mở đầu</h3>
+    <ul><li>Mỗi người chọn <b>2 thẻ</b> bất kỳ để xem riêng. Ai đã xem thẻ nào thì cả hai đều thấy (chấm màu trên thẻ), nhưng chỉ người xem biết nội dung.</li></ul>
+    <h3>Mỗi lượt, chọn 1 việc</h3>
+    <ul>
+      <li>📢 <b>Chia sẻ 1 ô lên bảng chung</b> (lưới công khai):
+        <ul>
+          <li><b>✓</b> (khẳng định một cặp là đúng) → được <b>tự chọn 1 thẻ</b> chưa xem.</li>
+          <li><b>✗</b> (khẳng định một cặp là sai) → rút <b>Thẻ Phát Hiện</b>: xem 1 thẻ ngẫu nhiên mình chưa xem.</li>
+          <li>Phải là điều bạn <b>chứng minh được</b> từ những gì mình biết (thẻ đã xem + bảng chung + biên bản + lời buộc tội sai). Máy kiểm tra giúp — không thể nói dối hay đoán mò.
+            Chia sẻ thiếu căn cứ thì <b>mất lượt</b> (hoặc được chọn lại, tuỳ cài đặt phòng).</li>
+          <li>Phải là <b>thông tin mới</b>: điều đã suy ra được từ thông tin công khai thì không tính.</li>
+        </ul></li>
+      <li>📂 <b>Công khai 1 thẻ</b> bạn đã xem mà đối thủ chưa xem → rút Thẻ Phát Hiện.</li>
+      <li>⚖️ <b>Buộc tội</b>: nêu hung thủ + hung khí + địa điểm. Đúng → <b>thắng</b>. Sai → mất 1 lượt buộc tội, lời buộc tội sai được công khai (cả hai biết bộ ba đó sai).
+        Hết lượt buộc tội là <b>thua</b>.</li>
+      <li>🔦 <b>Bí — điều tra thêm</b>: chỉ dùng được khi bạn <b>không còn</b> ô nào chứng minh được mà bảng chung chưa có, và không còn thẻ nào để công khai → rút Thẻ Phát Hiện.</li>
+      <li>⏭️ Bỏ lượt (khi không muốn làm gì).</li>
+    </ul>
+    <h3>Lưới suy luận</h3>
+    <ul>
+      <li>Chạm ô để ghi chú riêng: trống → ✗ → ✓. Ghi chú chỉ mình bạn thấy, lưu trên máy của bạn.</li>
+      <li>Token tròn ✓/✗ là bảng chung, chắc chắn đúng. Khi có ✓ chung, các ô cùng hàng/cột trong ô lớn đó tự hiện ✗ mờ.</li>
+      <li>Mẹo kiểu Murdle: mỗi hàng và mỗi cột của từng ô lớn có đúng một ✓. Đừng quên ô <b>Hung khí – Địa điểm</b> ở dưới: nối hai thông tin qua nghi phạm!</li>
+    </ul>
+    <h3>Chiến thuật</h3>
+    <ul>
+      <li>Chia sẻ là con dao hai lưỡi: bạn được thêm chứng cứ, nhưng đối thủ cũng thấy thông tin bạn đặt lên bảng.</li>
+      <li>✓ giúp đối thủ nhiều hơn ✗, nhưng đổi lại bạn được chọn đúng loại thẻ mình cần.</li>
+    </ul>
+    </div><div class="row"><button class="btn red" id="closeRules">Đã hiểu</button></div>`, "rules");
+  $("closeRules").onclick=closeOverlay;
+}
+
+/* ---- sự kiện lưới ---- */
+$("grid").addEventListener("click",e=>{
+  const td=e.target.closest("td.c"); if(!td||!view) return;
+  const k=td.dataset.k, v=view;
+  if(mode==="share"&&myTurn(v)&&!v.pending){
+    if(v.marks[k]){ toast("Ô này đã có trên bảng chung."); return; }
+    if(td.classList.contains("impc")){ toast("Ô này đã rõ từ bảng chung — hãy chia sẻ điều mới."); return; }
+    selCell=k; renderGrid(); renderActions();
+    const a=$("actions"); if(a.getBoundingClientRect().top<0||a.getBoundingClientRect().bottom>innerHeight) a.scrollIntoView({behavior:"smooth",block:"center"});
+    return;
+  }
+  if(v.marks[k]){ toast("Ô này đã nằm trên bảng chung — chắc chắn đúng."); return; }
+  const nv=((notes[k]||0)+1)%3;
+  if(nv) notes[k]=nv; else delete notes[k];
+  if(nv===2&&autoX){
+    const c=parseKey(k), n=v.cs.n;
+    for(let x=0;x<n;x++){
+      for(const kk of [c.t+c.a+x, c.t+x+c.b]) if(kk!==k&&!notes[kk]&&!v.marks[kk]) notes[kk]=1;
+    }
+  }
+  saveNotes(); renderGrid();
+});
+let hlKey=null;
+$("grid").addEventListener("mouseover",e=>{
+  const td=e.target.closest("td.c"); const k=td?td.dataset.k:null;
+  if(k===hlKey) return; hlKey=k;
+  $("grid").querySelectorAll("td.hl,td.hx").forEach(x=>x.classList.remove("hl","hx"));
+  if(!k) return;
+  const c=parseKey(k);
+  $("grid").querySelectorAll("td.c").forEach(x=>{ const o=parseKey(x.dataset.k); if(o.t===c.t&&(o.a===c.a||o.b===c.b)) x.classList.add(o.a===c.a&&o.b===c.b?"hx":"hl"); });
+});
+$("grid").addEventListener("mouseleave",()=>{ hlKey=null; $("grid").querySelectorAll("td.hl,td.hx").forEach(x=>x.classList.remove("hl","hx")); });
+$("autoX").addEventListener("change",e=>{ autoX=e.target.checked; try{ localStorage.setItem("murdle-autox",autoX?"1":"0"); }catch(err){} });
+$("clearNotes").onclick=()=>{ if(!view||!Object.keys(notes).length) return; if(confirm("Xoá hết ghi chú riêng trên lưới?")){ notes={}; saveNotes(); renderGrid(); } };
+$("resignBtn").onclick=()=>{
+  if(!view||view.phase==="end") return;
+  openOverlay(`<h2>Đầu hàng?</h2><p class="tag" style="text-align:center">${esc(opp(view))} sẽ thắng ván này.</p>
+    <div class="row"><button class="btn red" id="yesRes">Đầu hàng</button><button class="btn ghost" id="noRes">Chơi tiếp</button></div>`,"resign");
+  $("yesRes").onclick=()=>{ closeOverlay(); sendAction({k:"resign"}); };
+  $("noRes").onclick=closeOverlay;
+};
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&view&&(mode||selCell!==null)&&!overlayId){ mode=null; selCell=null; selCard=null; render(); }
+});
+
+/* ================= BOOT ================= */
+$("createBtn").onclick=createRoom;
+$("joinBtn").onclick=joinRoom;
+$("rulesBtn0").onclick=showRules;
+$("rulesBtn").onclick=()=>{ const prev=overlayId; showRules(); if(prev==="end") $("closeRules").onclick=showEnd; };
+$("copyBtn").onclick=()=>{ navigator.clipboard.writeText(roomLink()).then(()=>toast("Đã sao chép link!"),()=>toast("Không sao chép được, hãy copy thủ công.")); };
+$("codeInput").addEventListener("keydown",e=>{ if(e.key==="Enter") joinRoom(); });
+let savedCfg=cleanCfg({});
+try{ const n=localStorage.getItem("murdle-name"); if(n) $("nameInput").value=n; savedCfg=cleanCfg(JSON.parse(localStorage.getItem("murdle-cfg")||"{}")); }catch(e){}
+fillSelects("nSel","accSel","strictSel",savedCfg);
+const qs=new URLSearchParams(location.search);
+if(qs.get("room") && !qs.get("host")) $("codeInput").value=qs.get("room").toUpperCase();
+</script>
+</body>
+</html>
